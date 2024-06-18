@@ -25,7 +25,18 @@
 #include "mm.h"
 #include "memlib.h"
 
-team_t team = {"","","","",""}; /* so we're compatible with 15213 driver */
+team_t team = {
+    /* Team name */
+    "ateam",
+    /* First member's full name */
+    "Ying Zuo",
+    /* First member's email address */
+    "yingzuo86@gmail.com",
+    /* Second member's full name (leave blank if none) */
+    "",
+    /* Second member's email address (leave blank if none) */
+    ""
+};
 
 /* $begin mallocmacros */
 /* Basic constants and macros */
