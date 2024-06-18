@@ -89,8 +89,8 @@ team_t team = {
 #define PREDP(bp)       ((char *)(bp) - DSIZE)
 #define SUCCP(bp)       ((char *)(bp) - WSIZE)
 
-#define PRED_BLKP(bp)  (*(size_t *)PREDP(head_listp))
-#define SUCC_BLKP(bp)   (*(size_t *)SUCCP(head_listp))
+#define PRED_BLKP(bp)  ((char *)(*(size_t *)PREDP(head_listp)))
+#define SUCC_BLKP(bp)   ((char *)(*(size_t *)SUCCP(head_listp)))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
 #define NEXT_BLKP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
@@ -115,13 +115,13 @@ int mm_init(void) {
     head_listp = payload + 3 * WSIZE;
     end_listp = payload + 7 * WSIZE;
     PUT(payload, PACK(4 * WSIZE,0));                        // prologue header
-    PUT(payload + 1 * WSIZE, NULL);                     // prologue pred address
+    PUT(payload + 1 * WSIZE, 0);                     // prologue pred address
     PUT(payload + 2 * WSIZE, payload + 7 * WSIZE);      // prologue succ address
     PUT(payload + 3 * WSIZE, PACK(4 * WSIZE,0));            // prologue footer
 
     PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));            // epilogue header
     PUT(payload + 5 * WSIZE, payload +3 * WSIZE);       // epilogue pred address
-    PUT(payload + 6 * WSIZE, NULL);                     // epologue succ address                     
+    PUT(payload + 6 * WSIZE, 0);                     // epologue succ address                     
     PUT(payload + 7 * WSIZE, PACK(4 * WSIZE,0));            // epilogue footer
 
     // Extend the empty heap with a free block of CHUNKSIZE bytes 
@@ -340,7 +340,7 @@ void mm_checkheap(void) {
     int cnt_free2 = 0;
     int state = 0; // help checking whether coalescing
     // go through in address order
-    while (bp < mem_heap_hi()) {
+    while (bp < *(size_t *)mem_heap_hi()) {
         if (GET_ALLOC(bp)) { // allocated
             state = 0;
         } 
@@ -363,7 +363,7 @@ void mm_checkheap(void) {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad prologue footer\n");
     }
-    if (PRED_BLKP(bp) != NULL) {
+    if (PRED_BLKP(bp) != 0) {
         printf("Bad prologue predecessor\n");
     }
     if (SUCC_BLKP(bp) < head_listp + 4 * WSIZE) {
@@ -373,7 +373,7 @@ void mm_checkheap(void) {
         printf("Error: prologue %p is not doubleword aligned", bp);
     }
 
-    for (bp = head_listp; SUCC_BLKP(bp) != end_listp; bp = SUCC_BLKP(bp)) {
+    for (bp = head_listp; SUCC_BLKP(bp) != (size_t)end_listp; bp = SUCC_BLKP(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
         // check whether aligned
@@ -395,7 +395,7 @@ void mm_checkheap(void) {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad epilogue footer\n");
     }
-    if (SUCC_BLKP(bp) != NULL) {
+    if (SUCC_BLKP(bp) != 0) {
         printf("Bad epilogue predecessor\n");
     }
     if (!((PREV_BLKP(bp) == head_listp) || (PREV_BLKP(bp) >= end_listp + 4 * WSIZE))) {
@@ -437,7 +437,7 @@ static void checkblock(void *bp) {
             printf("Error: a freed block starting at %p points to an allocated block\n", bp);
         }
         // pred and succ are self-consistent?
-        if (PRED_BLKP(SUCC_BLKP(bp)) != bp) {
+        if (PRED_BLKP(SUCC_BLKP(bp)) != (size_t)bp) {
             printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
         }
     }
