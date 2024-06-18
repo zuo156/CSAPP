@@ -151,13 +151,13 @@ static void *extend_heap(size_t words) {
     old = SUCC_BLKP(head_listp);
 
     // update the succ address in prologue
-    PUT(SUCCP(head_listp), bp);
+    PUT(SUCCP(head_listp), (size_t)bp);
 
     // linking this free block
-    PUT(PREDP(bp), head_listp);
-    PUT(SUCCP(bp), old);
+    PUT(PREDP(bp), (size_t)head_listp);
+    PUT(SUCCP(bp), (size_t)old);
 
-    PUT(PREDP(old), bp);
+    PUT(PREDP(old), (size_t)bp);
 
     return address_coalesce(bp);
 }
@@ -173,13 +173,13 @@ void mm_free(void *bp) {
     char *old = SUCC_BLKP(head_listp);
 
     // update the succ address in prologue
-    PUT(SUCCP(head_listp), bp);
+    PUT(SUCCP(head_listp), (size_t)bp);
 
     // linking this free block
-    PUT(PREDP(bp), head_listp);
-    PUT(SUCCP(bp), old);
+    PUT(PREDP(bp), (size_t)head_listp);
+    PUT(SUCCP(bp), (size_t)old);
 
-    PUT(PREDP(old), bp);
+    PUT(PREDP(old), (size_t)bp);
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
@@ -204,8 +204,8 @@ static void *address_coalesce(void *bp) {
 	    PUT(FTRP(bp), PACK(size,0));
         // reusing the predp and succp of bp
         // isolating the next_block
-        PUT(SUCCP(PRED_BLKP(next)),SUCC_BLKP(next));
-        PUT(PREDP(SUCC_BLKP(next)),PRED_BLKP(next));
+        PUT(SUCCP(PRED_BLKP(next)),(size_t)SUCC_BLKP(next));
+        PUT(PREDP(SUCC_BLKP(next)),(size_t)PRED_BLKP(next));
 	    return(bp);
     }
 
@@ -214,11 +214,11 @@ static void *address_coalesce(void *bp) {
 	    PUT(FTRP(bp), PACK(size, 0));
 	    PUT(HDRP(prev), PACK(size, 0));
         // moving predp and succp of bp to prev
-        PUT(SUCCP(prev), SUCC_BLKP(bp));
-        PUT(PREDP(prev), PRED_BLKP(bp));
+        PUT(SUCCP(prev), (size_t)SUCC_BLKP(bp));
+        PUT(PREDP(prev), (size_t)PRED_BLKP(bp));
         // isolating the prev_block
-        PUT(SUCCP(PRED_BLKP(prev)),SUCC_BLKP(prev));
-        PUT(PREDP(SUCC_BLKP(prev)),PRED_BLKP(prev));
+        PUT(SUCCP(PRED_BLKP(prev)), (size_t)SUCC_BLKP(prev));
+        PUT(PREDP(SUCC_BLKP(prev)), (size_t)PRED_BLKP(prev));
 	    return(prev);
     }
 
@@ -232,8 +232,8 @@ static void *address_coalesce(void *bp) {
             PUT(FTRP(bp), PACK(size,0));
             // reusing the predp and succp of bp
             // isolating the next_block
-            PUT(SUCCP(PRED_BLKP(next)),SUCC_BLKP(next));
-            PUT(PREDP(SUCC_BLKP(next)),PRED_BLKP(next));
+            PUT(SUCCP(PRED_BLKP(next)), (size_t)SUCC_BLKP(next));
+            PUT(PREDP(SUCC_BLKP(next)), (size_t)PRED_BLKP(next));
             return(bp);
         }
         else {
@@ -243,18 +243,18 @@ static void *address_coalesce(void *bp) {
             PUT(FTRP(next), PACK(size, 0));
 
             // moving predp and succp of bp to prev
-            PUT(SUCCP(prev), SUCC_BLKP(bp));
-            PUT(PREDP(prev), PRED_BLKP(bp));
+            PUT(SUCCP(prev), (size_t)SUCC_BLKP(bp));
+            PUT(PREDP(prev), (size_t)PRED_BLKP(bp));
 
             // isolating the prev_block
-            PUT(SUCCP(PRED_BLKP(prev)),SUCC_BLKP(prev));
-            PUT(PREDP(SUCC_BLKP(prev)),PRED_BLKP(prev));
+            PUT(SUCCP(PRED_BLKP(prev)), (size_t)SUCC_BLKP(prev));
+            PUT(PREDP(SUCC_BLKP(prev)), (size_t)PRED_BLKP(prev));
 
             // isolating the next_block
             // it's impossible that next is prelogue or epilogue
             // because all regular blocks are behind the prelogue and epilogue 
-            PUT(SUCCP(PRED_BLKP(next)),SUCC_BLKP(next));
-            PUT(PREDP(SUCC_BLKP(next)),PRED_BLKP(next));
+            PUT(SUCCP(PRED_BLKP(next)), (size_t)SUCC_BLKP(next));
+            PUT(PREDP(SUCC_BLKP(next)), (size_t)PRED_BLKP(next));
             return(prev);
         }
         
@@ -309,16 +309,16 @@ static void place_link(void *bp, size_t asize) {
         PUT(HDRP(new_bp), PACK(bsize - asize, 0));
         PUT(FTRP(new_bp), PACK(bsize - asize, 0));
         // relinking
-        PUT(PREDP(new_bp), PRED_BLKP(bp));
-        PUT(SUCCP(new_bp), SUCC_BLKP(bp));
+        PUT(PREDP(new_bp), (size_t)PRED_BLKP(bp));
+        PUT(SUCCP(new_bp), (size_t)SUCC_BLKP(bp));
     }
     else {
         // allocated block
         PUT(HDRP(bp), PACK(bsize, 1));
         PUT(FTRP(bp), PACK(bsize, 1));
         // relinking or isolating
-        PUT(SUCCP(PRED_BLKP(bp)), SUCC_BLKP(bp));
-        PUT(PREDP(SUCC_BLKP(bp)), PRED_BLKP(bp));
+        PUT(SUCCP(PRED_BLKP(bp)), (size_t)SUCC_BLKP(bp));
+        PUT(PREDP(SUCC_BLKP(bp)), (size_t)PRED_BLKP(bp));
     }
 }
 
@@ -426,10 +426,10 @@ static void checkblock(void *bp) {
             printf("Error: in a freed block starting at %p, header does not match footer\n", bp);
         }
         // pointing to valid address?
-        if ((GET(PREDP(bp)) < *(size_t *)mem_heap_lo()) || (GET(PREDP(bp)) > *(size_t *)mem_heap_hi())) {
+        if ((GET(PREDP(bp)) < *(char *)mem_heap_lo()) || (GET(PREDP(bp)) > *(char *)mem_heap_hi())) {
             printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
         }
-        if ((GET(SUCCP(bp)) < *(size_t *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(size_t *)mem_heap_hi())) {
+        if ((GET(SUCCP(bp)) < *(char *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(char *)mem_heap_hi())) {
             printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
         }
         // pointing to a free block?
