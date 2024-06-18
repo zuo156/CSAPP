@@ -179,7 +179,7 @@ void mm_free(void *bp) {
     PUT(PREDP(bp), head_listp);
     PUT(SUCCP(bp), old);
 
-    PUT(PRED(old), bp);
+    PUT(PREDP(old), bp);
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
@@ -392,7 +392,7 @@ void mm_checkheap(void) {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(HDRP(bp))) {
         printf("Bad epilogue header\n");
     }
-    if ((GET_SIZE(HTRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad epilogue footer\n");
     }
     if (SUCC_BLKP(bp) != NULL) {
