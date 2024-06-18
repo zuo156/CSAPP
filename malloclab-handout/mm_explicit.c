@@ -89,8 +89,8 @@ team_t team = {
 #define PREDP(bp)       ((char *)(bp) - DSIZE)
 #define SUCCP(bp)       ((char *)(bp) - WSIZE)
 
-#define PRED_BLKP(bp)   ((char *) (*(size_t *)PREDP(head_listp)))
-#define SUCC_BLKP(bp)   ((char *) (*(size_t *)SUCCP(head_listp)))
+#define PRED_BLKP(bp)  (*(size_t *)PREDP(head_listp))
+#define SUCC_BLKP(bp)   (*(size_t *)SUCCP(head_listp))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
 #define NEXT_BLKP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
@@ -426,10 +426,10 @@ static void checkblock(void *bp) {
             printf("Error: in a freed block starting at %p, header does not match footer\n", bp);
         }
         // pointing to valid address?
-        if ((GET(PREDP(bp)) < mem_heap_lo()) || (GET(PREDP(bp)) > mem_heap_hi())) {
+        if ((GET(PREDP(bp)) < *(size_t *)mem_heap_lo()) || (GET(PREDP(bp)) > *(size_t *)mem_heap_hi())) {
             printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
         }
-        if ((GET(SUCCP(bp)) < mem_heap_lo()) || (GET(SUCCP(bp)) > mem_heap_hi())) {
+        if ((GET(SUCCP(bp)) < *(size_t *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(size_t *)mem_heap_hi())) {
             printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
         }
         // pointing to a free block?
