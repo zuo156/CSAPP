@@ -162,7 +162,7 @@ static void *extend_heap(size_t words) {
     return address_coalesce(bp);
 }
 
-static mm_free(void *bp) {
+void mm_free(void *bp) {
     size_t size = GET_SIZE(HDRP(bp));
     // update the allocation status
 
@@ -261,7 +261,7 @@ static void *address_coalesce(void *bp) {
     }
 }
 
-static void mm_malloc(size_t size) {
+void *mm_malloc(size_t size) {
     size_t asize;   // adjusted block size
     size_t extendsize; // amount to extend heap if no fit
     char *bp;
@@ -291,6 +291,10 @@ static void mm_malloc(size_t size) {
     }
     place_link(bp, asize);
     return bp;
+}
+
+void *mm_realloc(void *ptr, size_t size) {
+    return NULL;
 }
 
 static void place_link(void *bp, size_t asize) {
@@ -330,7 +334,7 @@ static void *find_fit(size_t asize) {
     return NULL; /* no fit */
 }
 
-void mm_checkheap(int verbose) {
+void mm_checkheap(void) {
     char *bp = head_listp + 5 * WSIZE;
     int cnt_free1 = 0;
     int cnt_free2 = 0;
