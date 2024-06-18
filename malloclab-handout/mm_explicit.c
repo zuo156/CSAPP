@@ -89,8 +89,8 @@ team_t team = {
 #define PREDP(bp)       ((char *)(bp) - DSIZE)
 #define SUCCP(bp)       ((char *)(bp) - WSIZE)
 
-#define PRED_BLKP(bp)   (*(size_t *)PREDP(head_listp))
-#define SUCC_BLKP(bp)   (*(size_t *)SUCCP(head_listp))
+#define PRED_BLKP(bp)   ((char *) (*(size_t *)PREDP(head_listp)))
+#define SUCC_BLKP(bp)   ((char *) (*(size_t *)SUCCP(head_listp)))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
 #define NEXT_BLKP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
@@ -157,7 +157,7 @@ static void *extend_heap(size_t words) {
     PUT(PREDP(bp), head_listp);
     PUT(SUCCP(bp), old);
 
-    PUT(PRED(old), bp);
+    PUT(PREDP(old), bp);
 
     return address_coalesce(bp);
 }
@@ -286,7 +286,7 @@ void *mm_malloc(size_t size) {
 
     // No fit found. Get more memory and place the block
     extendsize = MAX(asize,CHUNKSIZE);
-    if ((bp = extend_headp(extendsize/WSIZE)) == NULL) {
+    if ((bp = extend_heap(extendsize/WSIZE)) == NULL) {
         return NULL;
     }
     place_link(bp, asize);
@@ -360,7 +360,7 @@ void mm_checkheap(void) {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(HDRP(bp))) {
         printf("Bad prologue header\n");
     }
-    if ((GET_SIZE(HTRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad prologue footer\n");
     }
     if (PRED_BLKP(bp) != NULL) {
