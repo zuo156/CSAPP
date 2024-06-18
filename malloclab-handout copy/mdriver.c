@@ -89,9 +89,8 @@ typedef struct {
  * Global variables
  *******************/
 int verbose = 0;        /* global flag for verbose output */
-static int errors = 0;  /* number of errs found when running student malloc    */
-char msg[MAXLINE];      /* for whenever we need to compose an error message    */
-int debug = 0;          /* global flag for conditionally printing debug output */
+static int errors = 0;  /* number of errs found when running student malloc */
+char msg[MAXLINE];      /* for whenever we need to compose an error message */
 
 /* Directory where default tracefiles are found */
 static char tracedir[MAXLINE] = TRACEDIR;
@@ -159,7 +158,7 @@ int main(int argc, char **argv)
     /* 
      * Read and interpret the command line arguments 
      */
-    while ((c = getopt(argc, argv, "f:t:d:hvVgal")) != EOF) {
+    while ((c = getopt(argc, argv, "f:t:hvVgal")) != EOF) {
         switch (c) {
 	case 'g': /* Generate summary info for the autograder */
 	    autograder = 1;
@@ -194,14 +193,6 @@ int main(int argc, char **argv)
         case 'h': /* Print this message */
 	    usage();
             exit(0);
-	case 'd': /* Omit timing runs when debugging for correctness */
-	  debug = 1;
-	  if ( sscanf(optarg, "%d", &debug) == 0 ) {
-	    printf("mdriver: option requires an argument -- d\n");
-	    usage();
-	    exit(1);
-	  }
-	  break;
         default:
 	    usage();
             exit(1);
@@ -303,23 +294,21 @@ int main(int argc, char **argv)
 	if (verbose > 1)
 	    printf("Checking mm_malloc for correctness, ");
 	mm_stats[i].valid = eval_mm_valid(trace, i, &ranges);
-	if ( !debug ) {
-	  if (mm_stats[i].valid) {
+	if (mm_stats[i].valid) {
 	    if (verbose > 1)
-	      printf("efficiency, ");
+		printf("efficiency, ");
 	    mm_stats[i].util = eval_mm_util(trace, i, &ranges);
 	    speed_params.trace = trace;
 	    speed_params.ranges = ranges;
 	    if (verbose > 1)
-	      printf("and performance.\n");
+		printf("and performance.\n");
 	    mm_stats[i].secs = fsecs(eval_mm_speed, &speed_params);
-	  }
 	}
 	free_trace(trace);
     }
 
     /* Display the mm results in a compact table */
-    if (verbose  && !debug) {
+    if (verbose) {
 	printf("\nResults for mm malloc:\n");
 	printresults(num_tracefiles, mm_stats);
 	printf("\n");
@@ -344,7 +333,7 @@ int main(int argc, char **argv)
     /* 
      * Compute and print the performance index 
      */
-    if (errors == 0  && !debug) {
+    if (errors == 0) {
 	avg_mm_throughput = ops/secs;
 
 	p1 = UTIL_WEIGHT * avg_mm_util;
@@ -1025,5 +1014,4 @@ static void usage(void)
     fprintf(stderr, "\t-t <dir>   Directory to find default traces.\n");
     fprintf(stderr, "\t-v         Print per-trace performance breakdowns.\n");
     fprintf(stderr, "\t-V         Print additional debug info.\n");
-    fprintf(stderr, "\t-d <n>     Omit timing, debug = n. So execute code: if (debug == n)...\n");
 }

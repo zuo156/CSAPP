@@ -12,8 +12,7 @@
  * This is the default path where the driver will look for the
  * default tracefiles. You can override it at runtime with the -t flag.
  */
-
-#define TRACEDIR "/home/CSTCIS/glancast/374class/malloclab/traces/"
+#define TRACEDIR "/afs/cs/project/ics2/im/labs/malloclab/traces/"
 
 /*
  * This is the list of default tracefiles in TRACEDIR that the driver
@@ -22,31 +21,18 @@
  * your students to implement realloc, you can delete the last two
  * traces.
  */
-
-#define  AMPTJPBAL "trace0.rep"
-#define  CCCPBAL "trace1.rep"
-#define  CPDECLBAL "trace2.rep" 
-#define  EXPRBAL "trace3.rep"
-#define  COALESCINGBAL "trace4.rep"
-#define  RANDOMBAL "trace5.rep"
-#define  RANDOM2BAL "trace6.rep"
-#define  BINARYBAL "trace7.rep"
-#define  BINARY2BAL "trace8.rep"
-#define  REALLOCBAL "trace9.rep"
-#define  REALLOC2BAL "trace10.rep"
-
 #define DEFAULT_TRACEFILES \
-  AMPTJPBAL,\
-  CCCPBAL,\
-  CPDECLBAL,\
-  EXPRBAL,\
-  COALESCINGBAL,\
-  RANDOMBAL,\
-  RANDOM2BAL,\
-  BINARYBAL,\
-  BINARY2BAL,\
-  REALLOCBAL,\
-  REALLOC2BAL
+  "amptjp-bal.rep",\
+  "cccp-bal.rep",\
+  "cp-decl-bal.rep",\
+  "expr-bal.rep",\
+  "coalescing-bal.rep",\
+  "random-bal.rep",\
+  "random2-bal.rep",\
+  "binary-bal.rep",\
+  "binary2-bal.rep",\
+  "realloc-bal.rep",\
+  "realloc2-bal.rep"
 
 /*
  * This constant gives the estimated performance of the libc malloc
