@@ -170,7 +170,7 @@ void mm_checkheap(int verbose)
 	printf("Bad prologue header\n");
     checkblock(heap_listp);
 
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXTP(bp)) {
 	if (verbose) 
 	    printblock(bp);
 	checkblock(bp);
@@ -201,7 +201,7 @@ static void *extend_heap(size_t words)
     /* Initialize free block header/footer and the epilogue header */
     PUT(HDRP(bp), PACK(size, 0));         /* free block header */
     PUT(FTRP(bp), PACK(size, 0));         /* free block footer */
-    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* new epilogue header */
+    PUT(HDRP(NEXTP(bp)), PACK(0, 1)); /* new epilogue header */
 
     /* Coalesce if the previous block was free */
     return coalesce(bp);
@@ -222,7 +222,7 @@ static void place(void *bp, size_t asize)
     if ((csize - asize) >= (DSIZE + OVERHEAD)) { 
 	PUT(HDRP(bp), PACK(asize, 1));
 	PUT(FTRP(bp), PACK(asize, 1));
-	bp = NEXT_BLKP(bp);
+	bp = NEXTP(bp);
 	PUT(HDRP(bp), PACK(csize-asize, 0));
 	PUT(FTRP(bp), PACK(csize-asize, 0));
     }
@@ -244,7 +244,7 @@ static void *find_fit(size_t asize)
     void *bp;
 
     /* first fit search */
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXTP(bp)) {
 	if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
 	    return bp;
 	}
@@ -259,8 +259,8 @@ static void *find_fit(size_t asize)
 /* $begin mmfree */
 static void *coalesce(void *bp) 
 {
-    size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
-    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+    size_t prev_alloc = GET_ALLOC(FTRP(PREVP(bp)));
+    size_t next_alloc = GET_ALLOC(HDRP(NEXTP(bp)));
     size_t size = GET_SIZE(HDRP(bp));
 
     if (prev_alloc && next_alloc) {            /* Case 1 */
@@ -268,25 +268,25 @@ static void *coalesce(void *bp)
     }
 
     else if (prev_alloc && !next_alloc) {      /* Case 2 */
-	size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+	size += GET_SIZE(HDRP(NEXTP(bp)));
 	PUT(HDRP(bp), PACK(size, 0));
 	PUT(FTRP(bp), PACK(size,0));
 	return(bp);
     }
 
     else if (!prev_alloc && next_alloc) {      /* Case 3 */
-	size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+	size += GET_SIZE(HDRP(PREVP(bp)));
 	PUT(FTRP(bp), PACK(size, 0));
-	PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-	return(PREV_BLKP(bp));
+	PUT(HDRP(PREVP(bp)), PACK(size, 0));
+	return(PREVP(bp));
     }
 
     else {                                     /* Case 4 */
-	size += GET_SIZE(HDRP(PREV_BLKP(bp))) + 
-	    GET_SIZE(FTRP(NEXT_BLKP(bp)));
-	PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-	PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
-	return(PREV_BLKP(bp));
+	size += GET_SIZE(HDRP(PREVP(bp))) + 
+	    GET_SIZE(FTRP(NEXTP(bp)));
+	PUT(HDRP(PREVP(bp)), PACK(size, 0));
+	PUT(FTRP(NEXTP(bp)), PACK(size, 0));
+	return(PREVP(bp));
     }
 }
 /* $end mmfree */
