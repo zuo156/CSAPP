@@ -112,21 +112,23 @@ static void mm_checkheap();
 
 int mm_init(void) {
     // initalize empty heap
-    if ((payload = mem_sbrk(8 * WSIZE)) == NULL) {
+    if ((payload = mem_sbrk(9 * WSIZE)) == NULL) {
         return -1;
     }
 
-    head_listp = payload + 3 * WSIZE;
-    end_listp = payload + 7 * WSIZE;
-    PUT(payload, PACK(4 * WSIZE,0));                        // prologue header
-    PUT(payload + 1 * WSIZE, 0);                     // prologue pred address
-    PUT(payload + 2 * WSIZE, (size_t)(payload + 7 * WSIZE));      // prologue succ address
-    PUT(payload + 3 * WSIZE, PACK(4 * WSIZE,0));            // prologue footer
+    PUT(payload, 0);                                 // alignment padding
 
-    PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));            // epilogue header
-    PUT(payload + 5 * WSIZE, (size_t)(payload +3 * WSIZE));       // epilogue pred address
-    PUT(payload + 6 * WSIZE, 0);                     // epologue succ address                     
-    PUT(payload + 7 * WSIZE, PACK(4 * WSIZE,0));            // epilogue footer
+    head_listp = payload + 4 * WSIZE;
+    end_listp = payload + 8 * WSIZE;
+    PUT(payload + 1 * WSIZE, PACK(4 * WSIZE,0));                        // prologue header
+    PUT(payload + 2 * WSIZE, 0);                     // prologue pred address
+    PUT(payload + 3 * WSIZE, (size_t)(payload + 7 * WSIZE));      // prologue succ address
+    PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));            // prologue footer
+
+    PUT(payload + 5 * WSIZE, PACK(4 * WSIZE,0));            // epilogue header
+    PUT(payload + 6 * WSIZE, (size_t)(payload +3 * WSIZE));       // epilogue pred address
+    PUT(payload + 7 * WSIZE, 0);                     // epologue succ address                     
+    PUT(payload + 8 * WSIZE, PACK(4 * WSIZE,0));            // epilogue footer
 
     // Extend the empty heap with a free block of CHUNKSIZE bytes 
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
@@ -362,10 +364,10 @@ void mm_checkheap() {
 
     // go through in linked-list order
     bp = head_listp;
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(HDRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp))) {
         printf("Bad prologue header\n");
     }
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp))) {
         printf("Bad prologue footer\n");
     }
     if (PRED_VAL(bp) != 0) {
@@ -375,7 +377,7 @@ void mm_checkheap() {
         printf("Bad prologue successor\n");
     }
     if ((size_t)bp % 8) {
-        printf("Error: prologue %p is not doubleword aligned", bp);
+        printf("Error: prologue %p is not doubleword aligned\n", bp);
     }
 
     for (bp = head_listp; (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
@@ -387,17 +389,17 @@ void mm_checkheap() {
     }
 
     if ( cnt_free1 > cnt_free2 ) {
-        printf("Might miss %i free blocks in explicit free list", cnt_free1 - cnt_free2);
+        printf("Might miss %i free blocks in explicit free list\n", cnt_free1 - cnt_free2);
     }
     if ( cnt_free1 < cnt_free2 ) {
-        printf("Might duplicate %i free blocks in explicit free list", cnt_free2 - cnt_free1);
+        printf("Might duplicate %i free blocks in explicit free list\n", cnt_free2 - cnt_free1);
     }
 
     bp = end_listp;
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(HDRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp))) {
         printf("Bad epilogue header\n");
     }
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp))) {
         printf("Bad epilogue footer\n");
     }
     if ((char *)SUCC_VAL(bp) != 0) {
@@ -407,7 +409,7 @@ void mm_checkheap() {
         printf("Bad epilogue successor\n");
     }
     if ((size_t)bp % 8) {
-        printf("Error: epilogue %p is not doubleword aligned", bp);
+        printf("Error: epilogue %p is not doubleword aligned\n", bp);
     }
 
 }
