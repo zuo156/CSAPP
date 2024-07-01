@@ -60,7 +60,7 @@ team_t team = {
 
 // begin macros
 // Basic constant and macros
-#define checkheap mm_checkheap()
+#define checkheap(lineno) mm_checkheap(lineno)
 
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
@@ -108,7 +108,7 @@ static void place_link(void *bp, size_t asize);
 static void *find_fit(size_t asize);
 static void *address_coalesce(void *bp);
 static void checkblock(void *bp);
-static void mm_checkheap();
+static void mm_checkheap(int lineno);
 
 int mm_init(void) {
     // initalize empty heap
@@ -134,7 +134,7 @@ int mm_init(void) {
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
-    checkheap;
+    checkheap(__LINE__);
     return 0;
 }
 
@@ -190,7 +190,7 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
-    checkheap;
+    checkheap(__LINE__);
 }
 
 static void *address_coalesce(void *bp) {
@@ -296,7 +296,7 @@ void *mm_malloc(size_t size) {
         return NULL;
     }
     place_link(bp, asize);
-    checkheap;
+    checkheap(__LINE__);
     return bp;
 }
 
@@ -341,7 +341,9 @@ static void *find_fit(size_t asize) {
     return NULL; /* no fit */
 }
 
-void mm_checkheap() {
+void mm_checkheap(int lineno) {
+    
+    printf("checking heap at %d line\n", lineno);
     char *bp = head_listp + 5 * WSIZE;
     int cnt_free1 = 0;
     int cnt_free2 = 0;
@@ -360,7 +362,7 @@ void mm_checkheap() {
         }
         bp += GET_SIZE(bp);
     }
-    cnt_free1 -= 2; // delete the epilogue and prologue
+    cnt_free1 -= 1; // delete the prologue
 
     // go through in linked-list order
     bp = head_listp;
@@ -377,7 +379,7 @@ void mm_checkheap() {
         printf("Bad prologue successor\n");
     }
     if ((size_t)bp % 8) {
-        printf("Error: prologue %p is not doubleword aligned\n", bp);
+        printf("Error: prologue %p is not double-word aligned\n", bp);
     }
 
     for (bp = head_listp; (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
@@ -409,7 +411,7 @@ void mm_checkheap() {
         printf("Bad epilogue successor\n");
     }
     if ((size_t)bp % 8) {
-        printf("Error: epilogue %p is not doubleword aligned\n", bp);
+        printf("Error: epilogue %p is not double-word aligned\n", bp);
     }
 
 }
