@@ -92,8 +92,8 @@ team_t team = {
 #define PREDP(bp)       ((char *)(bp) - DSIZE)
 #define SUCCP(bp)       ((char *)(bp) - WSIZE)
 
-#define PRED_VAL(bp)   ((*((size_t *)PREDP(head_listp))))
-#define SUCC_VAL(bp)   ((*((size_t *)SUCCP(head_listp))))
+#define PRED_VAL(bp)   ((*((size_t *)PREDP(bp))))
+#define SUCC_VAL(bp)   ((*((size_t *)SUCCP(bp))))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
 #define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
@@ -108,7 +108,7 @@ static void place_link(void *bp, size_t asize);
 static void *find_fit(size_t asize);
 static void *address_coalesce(void *bp);
 static void checkblock(void *bp);
-void mm_checkheap();
+static void mm_checkheap();
 
 int mm_init(void) {
     // initalize empty heap
@@ -153,7 +153,7 @@ static void *extend_heap(size_t words) {
     PUT(FTRP(bp), PACK(size, 0));
 
     // store the old succ addres in prologue
-    old = SUCC_VAL(head_listp);
+    old = (char *)SUCC_VAL(head_listp);
 
     // update the succ address in prologue
     PUT(SUCCP(head_listp), (size_t)bp);
@@ -175,7 +175,7 @@ void mm_free(void *bp) {
     PUT(FTRP(bp), PACK(size,0));
 
     // store the old succ addres in prologue
-    char *old = SUCC_VAL(head_listp);
+    char *old = (char *)SUCC_VAL(head_listp);
 
     // update the succ address in prologue
     PUT(SUCCP(head_listp), (size_t)bp);
@@ -188,7 +188,7 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
-    mm_checkheap;
+    checkheap;
 }
 
 static void *address_coalesce(void *bp) {
