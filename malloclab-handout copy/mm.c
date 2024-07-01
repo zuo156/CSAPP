@@ -59,6 +59,8 @@ team_t team = {
 
 // begin macros
 // Basic constant and macros
+#define checkheap() mm_checkheap()
+
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
 #define CHUNKSIZE   (1<<12) /* initial heap size (bytes) */
@@ -105,6 +107,7 @@ static void place_link(void *bp, size_t asize);
 static void *find_fit(size_t asize);
 static void *address_coalesce(void *bp);
 static void checkblock(void *bp);
+void mm_checkheap();
 
 int mm_init(void) {
     // initalize empty heap
@@ -116,11 +119,11 @@ int mm_init(void) {
     end_listp = payload + 7 * WSIZE;
     PUT(payload, PACK(4 * WSIZE,0));                        // prologue header
     PUT(payload + 1 * WSIZE, 0);                     // prologue pred address
-    PUT(payload + 2 * WSIZE, payload + 7 * WSIZE);      // prologue succ address
+    PUT(payload + 2 * WSIZE, (size_t)(payload + 7 * WSIZE));      // prologue succ address
     PUT(payload + 3 * WSIZE, PACK(4 * WSIZE,0));            // prologue footer
 
     PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));            // epilogue header
-    PUT(payload + 5 * WSIZE, payload +3 * WSIZE);       // epilogue pred address
+    PUT(payload + 5 * WSIZE, (size_t)(payload +3 * WSIZE));       // epilogue pred address
     PUT(payload + 6 * WSIZE, 0);                     // epologue succ address                     
     PUT(payload + 7 * WSIZE, PACK(4 * WSIZE,0));            // epilogue footer
 
@@ -128,6 +131,7 @@ int mm_init(void) {
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
+    checkheap();
     return 0;
 }
 
@@ -183,6 +187,7 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
+    mm_checkheap();
 }
 
 static void *address_coalesce(void *bp) {
@@ -190,8 +195,15 @@ static void *address_coalesce(void *bp) {
     char *prev = PREV_BLKP(bp);
     char *next = NEXT_BLKP(bp);
 
+    size_t next_alloc;
+    if (next > *(char *)mem_heap_lo) {
+        next_alloc = 1;
+    }
+    else {
+        next_alloc = GET_ALLOC(HDRP(next));
+    }
+
     size_t prev_alloc = GET_ALLOC(FTRP(prev));
-    size_t next_alloc = GET_ALLOC(HDRP(next));
     size_t size = GET_ALLOC(HDRP(bp));
 
     if (prev_alloc && next_alloc) {            /* Case 1 */
@@ -290,6 +302,7 @@ void *mm_malloc(size_t size) {
         return NULL;
     }
     place_link(bp, asize);
+    mm_checkheap();
     return bp;
 }
 
@@ -334,19 +347,19 @@ static void *find_fit(size_t asize) {
     return NULL; /* no fit */
 }
 
-void mm_checkheap(void) {
+void mm_checkheap() {
     char *bp = head_listp + 5 * WSIZE;
     int cnt_free1 = 0;
     int cnt_free2 = 0;
     int state = 0; // help checking whether coalescing
     // go through in address order
-    while (bp < *(size_t *)mem_heap_hi()) {
+    while (bp < *(char *)mem_heap_hi()) {
         if (GET_ALLOC(bp)) { // allocated
             state = 0;
         } 
         else { // free
             if (state == 1) {
-                printf("Having contiguous free blocks that escaped coalescing\n");
+                printf("Having contiguous free blocks that escaped coalescing at %p\n", bp);
             }
             cnt_free1 += 1;
             state = 1;
@@ -373,7 +386,7 @@ void mm_checkheap(void) {
         printf("Error: prologue %p is not doubleword aligned", bp);
     }
 
-    for (bp = head_listp; SUCC_BLKP(bp) != (size_t)end_listp; bp = SUCC_BLKP(bp)) {
+    for (bp = head_listp; SUCC_BLKP(bp) != end_listp; bp = SUCC_BLKP(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
         // check whether aligned
@@ -407,84 +420,40 @@ void mm_checkheap(void) {
 
 }
 
-static void checkblock(void *bp) {
+static void checkblock(void *bp) {     // checkblock for the free list
 
+/* Block level */
+    // header and footer match
+    if (!(GET(HDRP(bp)) == GET(FTRP(bp)))) {
+        printf("Error: in a freed block starting at %p, header does not match footer\n", bp);
+    }
     // check whether aligned
     if ((size_t)bp % 8) {
         printf("Error: %p is not doubleword aligned\n", bp);
     }
-    
-    if (GET_ALLOC(HDRP(bp))) {
-        // if 1->allocated, does it have header and footer?
-        if (GET(AL_HDRP(bp)) != GET(AL_FTRP(bp))) {
-            printf("Error: in an allocated block starting at %p, header does not match footer\n", bp);
-        }
+
+/* list level*/    
+    // pred and succ are self-consistent?
+    if (PRED_BLKP(SUCC_BLKP(bp)) != bp) {
+        printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
     }
-    else {
-        // if 0->free, does it have header, pred, succ, footer?
-        if (!(GET(HDRP(bp)) == GET(FTRP(bp)))) {
-            printf("Error: in a freed block starting at %p, header does not match footer\n", bp);
-        }
-        // pointing to valid address?
-        if ((GET(PREDP(bp)) < *(char *)mem_heap_lo()) || (GET(PREDP(bp)) > *(char *)mem_heap_hi())) {
-            printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
-        }
-        if ((GET(SUCCP(bp)) < *(char *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(char *)mem_heap_hi())) {
-            printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
-        }
-        // pointing to a free block?
-        if (GET_ALLOC(HDRP(SUCC_BLKP(bp))) == 1) {
-            printf("Error: a freed block starting at %p points to an allocated block\n", bp);
-        }
-        // pred and succ are self-consistent?
-        if (PRED_BLKP(SUCC_BLKP(bp)) != (size_t)bp) {
-            printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
-        }
+    // free list contrains no allocated blocks
+    if (GET(AL_HDRP(bp)) != GET(AL_FTRP(bp))) {
+        printf("Error: %p is an allocated block\n", bp);
+        return;
     }
-   
+    // pointing to a free block?
+    if (GET_ALLOC(HDRP(SUCC_BLKP(bp))) == 1) {
+        printf("Error: a freed block starting at %p points to an allocated block\n", bp);
+    }
     
+/* heap level*/
+    // pointing to valid address?
+    if ((GET(PREDP(bp)) < *(char *)mem_heap_lo()) || (GET(PREDP(bp)) > *(char *)mem_heap_hi())) {
+        printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
+    }
+    if ((GET(SUCCP(bp)) < *(char *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(char *)mem_heap_hi())) {
+        printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
+    }
+       
 }
-
-// we cannot coalesce the blocks which are not address-adjacent
-// static void *coalesce(void *bp) {
-//     char *pred = PRED_BLKP(bp);
-//     char *succ = SUCC_BLKP(bp);
-
-//     size_t pred_alloc = GET_ALLOC(HDRP(pred));
-//     size_t succ_alloc = GET_ALLOC(HDRP(succ));
-//     size_t size = GET_ALLOC(HDRP(bp));
-
-//     if (pred_alloc && succ_alloc) {         // don't need coalesce
-//         return(bp);
-//     }
-//     else if (pred_alloc && !succ_alloc) {   // coalesce with the next block
-//         size += GET_SIZE(HDRP(succ));
-//         // change size
-//         PUT(HDRP(bp), PACK(size,0));
-//         PUT(FTRP(bp), PACK(size,0));
-//         // relinking
-//         PUT(SUCCP(bp), SUCCP_BLKP(succ));
-//         PUT(PREDP(SUCC_BLKP(succ)), bp);
-//         return(bp);
-//     }
-//     else if (!pred_alloc && succ_alloc) {
-//         size += GET_SIZE(HDRP(PRED_BLKP(bp)));
-// 	    PUT(FTRP(bp), PACK(size, 0));
-// 	    PUT(HDRP(pred), PACK(size, 0));
-//         // relinking
-//         PUT(SUCCP(pred), SUCC_BLKP(bp));
-//         PUT(PREDP(succ), pred);
-//         return(PRED_BLKP(bp));
-//     }
-//     else {
-//         size += GET_SIZE(HDRP(PRED_BLKP(bp))) + GET_SIZE(FTRP(SUCC_BLKP(bp)));
-//         PUT(HDRP(PRED_BLKP(bp)), PACK(size, 0));
-// 	    PUT(FTRP(SUCC_BLKP(bp)), PACK(size, 0));
-//         // relinking
-//         char *pred_pred = PRED_BLKP(pred);
-//         char *succ_succ = SUCC_BLKP(succ);
-//         PUT(SUCCP(pred_pred), pred)
-//         PUT(PREDP(succ_succ), pred)
-//         return(PRED_BLKP(bp));
-//     }
-// }
