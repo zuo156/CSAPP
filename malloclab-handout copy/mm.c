@@ -32,6 +32,7 @@
     | hdr(8:a) | pred | end_listp | ftr(8:a) |
         Regular block
     | hdr(8:a) |( pred | payload (| padding) | succ |) ftr(8:a) |
+    where 8 is 8 bytes
     Therefore, the smallest block size is 4-word
     
 */
@@ -59,7 +60,7 @@ team_t team = {
 
 // begin macros
 // Basic constant and macros
-#define checkheap() mm_checkheap()
+#define checkheap mm_checkheap
 
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
@@ -91,12 +92,12 @@ team_t team = {
 #define PREDP(bp)       ((char *)(bp) - DSIZE)
 #define SUCCP(bp)       ((char *)(bp) - WSIZE)
 
-#define PRED_BLKP(bp)  ((char *)(*(size_t *)PREDP(head_listp)))
-#define SUCC_BLKP(bp)   ((char *)(*(size_t *)SUCCP(head_listp)))
+#define PRED_VAL(bp)  ((*(size_t *)PREDP(head_listp)))
+#define SUCC_VAL(bp)   ((*(size_t *)SUCCP(head_listp)))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
-#define NEXT_BLKP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
-#define PREV_BLKP(bp)  ((char *)(bp) - (GET_SIZE((char *)(bp) - 4 * WSIZE)) + 4 * WSIZE)
+#define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
+#define PREVP(bp)  ((char *)(bp) - (GET_SIZE((char *)(bp) - 4 * WSIZE)) + 4 * WSIZE)
 
 /* global variable*/
 static char *head_listp, *end_listp, *payload;
@@ -131,7 +132,7 @@ int mm_init(void) {
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
-    checkheap();
+    checkheap;
     return 0;
 }
 
@@ -152,7 +153,7 @@ static void *extend_heap(size_t words) {
     PUT(FTRP(bp), PACK(size, 0));
 
     // store the old succ addres in prologue
-    old = SUCC_BLKP(head_listp);
+    old = SUCC_VAL(head_listp);
 
     // update the succ address in prologue
     PUT(SUCCP(head_listp), (size_t)bp);
@@ -174,7 +175,7 @@ void mm_free(void *bp) {
     PUT(FTRP(bp), PACK(size,0));
 
     // store the old succ addres in prologue
-    char *old = SUCC_BLKP(head_listp);
+    char *old = SUCC_VAL(head_listp);
 
     // update the succ address in prologue
     PUT(SUCCP(head_listp), (size_t)bp);
@@ -187,23 +188,30 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
-    mm_checkheap();
+    mm_checkheap;
 }
 
 static void *address_coalesce(void *bp) {
 
-    char *prev = PREV_BLKP(bp);
-    char *next = NEXT_BLKP(bp);
+    char *prev = PREVP(bp);
+    char *next = NEXTP(bp);
 
     size_t next_alloc;
-    if (next > *(char *)mem_heap_lo) {
+    if (next > *(char *)mem_heap_hi) {      // if next is end of the heap
         next_alloc = 1;
     }
     else {
         next_alloc = GET_ALLOC(HDRP(next));
     }
 
-    size_t prev_alloc = GET_ALLOC(FTRP(prev));
+    size_t prev_alloc;
+    if (prev == end_listp) {                  // if prev is the epilogue
+        prev_alloc = 1;
+    }
+    else{
+        prev_alloc = GET_ALLOC(FTRP(prev));
+    }
+
     size_t size = GET_ALLOC(HDRP(bp));
 
     if (prev_alloc && next_alloc) {            /* Case 1 */
@@ -211,65 +219,49 @@ static void *address_coalesce(void *bp) {
     }
 
     else if (prev_alloc && !next_alloc) {      /* Case 2 */
-	    size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+	    size += GET_SIZE(HDRP(NEXTP(bp)));
 	    PUT(HDRP(bp), PACK(size, 0));
 	    PUT(FTRP(bp), PACK(size,0));
         // reusing the predp and succp of bp
         // isolating the next_block
-        PUT(SUCCP(PRED_BLKP(next)),(size_t)SUCC_BLKP(next));
-        PUT(PREDP(SUCC_BLKP(next)),(size_t)PRED_BLKP(next));
+        PUT(SUCCP(PRED_VAL(next)),(size_t)SUCC_VAL(next));
+        PUT(PREDP(SUCC_VAL(next)),(size_t)PRED_VAL(next));
 	    return(bp);
     }
 
     else if (!prev_alloc && next_alloc) {      /* Case 3 */
-	    size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+	    size += GET_SIZE(HDRP(PREVP(bp)));
 	    PUT(FTRP(bp), PACK(size, 0));
 	    PUT(HDRP(prev), PACK(size, 0));
         // moving predp and succp of bp to prev
-        PUT(SUCCP(prev), (size_t)SUCC_BLKP(bp));
-        PUT(PREDP(prev), (size_t)PRED_BLKP(bp));
+        PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+        PUT(PREDP(prev), (size_t)PRED_VAL(bp));
         // isolating the prev_block
-        PUT(SUCCP(PRED_BLKP(prev)), (size_t)SUCC_BLKP(prev));
-        PUT(PREDP(SUCC_BLKP(prev)), (size_t)PRED_BLKP(prev));
+        PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+        PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
 	    return(prev);
     }
 
     else {       /* Case 4 */
-        if (prev == end_listp) {
-            // if prev_block is epilogue
-            // the same as Case 2
+        size += GET_SIZE(HDRP(PREVP(bp))) + GET_SIZE(FTRP(NEXTP(bp)));
 
-            size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-            PUT(HDRP(bp), PACK(size, 0));
-            PUT(FTRP(bp), PACK(size,0));
-            // reusing the predp and succp of bp
-            // isolating the next_block
-            PUT(SUCCP(PRED_BLKP(next)), (size_t)SUCC_BLKP(next));
-            PUT(PREDP(SUCC_BLKP(next)), (size_t)PRED_BLKP(next));
-            return(bp);
-        }
-        else {
-            size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(FTRP(NEXT_BLKP(bp)));
+        PUT(HDRP(prev), PACK(size, 0));
+        PUT(FTRP(next), PACK(size, 0));
 
-            PUT(HDRP(prev), PACK(size, 0));
-            PUT(FTRP(next), PACK(size, 0));
+        // moving predp and succp of bp to prev
+        PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+        PUT(PREDP(prev), (size_t)PRED_VAL(bp));
 
-            // moving predp and succp of bp to prev
-            PUT(SUCCP(prev), (size_t)SUCC_BLKP(bp));
-            PUT(PREDP(prev), (size_t)PRED_BLKP(bp));
+        // isolating the prev_block
+        PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+        PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
 
-            // isolating the prev_block
-            PUT(SUCCP(PRED_BLKP(prev)), (size_t)SUCC_BLKP(prev));
-            PUT(PREDP(SUCC_BLKP(prev)), (size_t)PRED_BLKP(prev));
-
-            // isolating the next_block
-            // it's impossible that next is prelogue or epilogue
-            // because all regular blocks are behind the prelogue and epilogue 
-            PUT(SUCCP(PRED_BLKP(next)), (size_t)SUCC_BLKP(next));
-            PUT(PREDP(SUCC_BLKP(next)), (size_t)PRED_BLKP(next));
-            return(prev);
-        }
-        
+        // isolating the next_block
+        // it's impossible that next is prelogue or epilogue
+        // because all regular blocks are behind the prelogue and epilogue 
+        PUT(SUCCP(PRED_VAL(next)), (size_t)SUCC_VAL(next));
+        PUT(PREDP(SUCC_VAL(next)), (size_t)PRED_VAL(next));
+        return(prev);
     }
 }
 
@@ -302,7 +294,7 @@ void *mm_malloc(size_t size) {
         return NULL;
     }
     place_link(bp, asize);
-    mm_checkheap();
+    checkheap;
     return bp;
 }
 
@@ -318,20 +310,20 @@ static void place_link(void *bp, size_t asize) {
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
         // free block
-        new_bp = NEXT_BLKP(bp);
+        new_bp = NEXTP(bp);
         PUT(HDRP(new_bp), PACK(bsize - asize, 0));
         PUT(FTRP(new_bp), PACK(bsize - asize, 0));
         // relinking
-        PUT(PREDP(new_bp), (size_t)PRED_BLKP(bp));
-        PUT(SUCCP(new_bp), (size_t)SUCC_BLKP(bp));
+        PUT(PREDP(new_bp), (size_t)PRED_VAL(bp));
+        PUT(SUCCP(new_bp), (size_t)SUCC_VAL(bp));
     }
     else {
         // allocated block
         PUT(HDRP(bp), PACK(bsize, 1));
         PUT(FTRP(bp), PACK(bsize, 1));
         // relinking or isolating
-        PUT(SUCCP(PRED_BLKP(bp)), (size_t)SUCC_BLKP(bp));
-        PUT(PREDP(SUCC_BLKP(bp)), (size_t)PRED_BLKP(bp));
+        PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
+        PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
     }
 }
 
@@ -339,7 +331,7 @@ static void place_link(void *bp, size_t asize) {
 static void *find_fit(size_t asize) { 
     void *bp;
 
-    for (bp = head_listp; SUCC_BLKP(bp) != end_listp; bp = SUCC_BLKP(bp)) {
+    for (bp = head_listp; SUCC_VAL(bp) != end_listp; bp = SUCC_VAL(bp)) {
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
@@ -376,17 +368,17 @@ void mm_checkheap() {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad prologue footer\n");
     }
-    if (PRED_BLKP(bp) != 0) {
+    if (PRED_VAL(bp) != 0) {
         printf("Bad prologue predecessor\n");
     }
-    if (SUCC_BLKP(bp) < head_listp + 4 * WSIZE) {
+    if (SUCC_VAL(bp) < head_listp + 4 * WSIZE) {
         printf("Bad prologue successor\n");
     }
     if ((size_t)bp % 8) {
         printf("Error: prologue %p is not doubleword aligned", bp);
     }
 
-    for (bp = head_listp; SUCC_BLKP(bp) != end_listp; bp = SUCC_BLKP(bp)) {
+    for (bp = head_listp; SUCC_VAL(bp) != end_listp; bp = SUCC_VAL(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
         // check whether aligned
@@ -408,10 +400,10 @@ void mm_checkheap() {
     if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || !GET_ALLOC(FTRP(bp))) {
         printf("Bad epilogue footer\n");
     }
-    if (SUCC_BLKP(bp) != 0) {
+    if (SUCC_VAL(bp) != 0) {
         printf("Bad epilogue predecessor\n");
     }
-    if (!((PREV_BLKP(bp) == head_listp) || (PREV_BLKP(bp) >= end_listp + 4 * WSIZE))) {
+    if (!((PREVP(bp) == head_listp) || (PREVP(bp) >= end_listp + 4 * WSIZE))) {
         printf("Bad epilogue successor\n");
     }
     if ((size_t)bp % 8) {
@@ -434,7 +426,7 @@ static void checkblock(void *bp) {     // checkblock for the free list
 
 /* list level*/    
     // pred and succ are self-consistent?
-    if (PRED_BLKP(SUCC_BLKP(bp)) != bp) {
+    if (PRED_VAL(SUCC_VAL(bp)) != bp) {
         printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
     }
     // free list contrains no allocated blocks
@@ -443,7 +435,7 @@ static void checkblock(void *bp) {     // checkblock for the free list
         return;
     }
     // pointing to a free block?
-    if (GET_ALLOC(HDRP(SUCC_BLKP(bp))) == 1) {
+    if (GET_ALLOC(HDRP(SUCC_VAL(bp))) == 1) {
         printf("Error: a freed block starting at %p points to an allocated block\n", bp);
     }
     
