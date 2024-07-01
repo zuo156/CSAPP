@@ -122,11 +122,11 @@ int mm_init(void) {
     end_listp = payload + 8 * WSIZE;
     PUT(payload + 1 * WSIZE, PACK(4 * WSIZE,0));                        // prologue header
     PUT(payload + 2 * WSIZE, 0);                     // prologue pred address
-    PUT(payload + 3 * WSIZE, (size_t)(payload + 7 * WSIZE));      // prologue succ address
+    PUT(payload + 3 * WSIZE, (size_t)(payload + 8 * WSIZE));      // prologue succ address
     PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));            // prologue footer
 
     PUT(payload + 5 * WSIZE, PACK(4 * WSIZE,0));            // epilogue header
-    PUT(payload + 6 * WSIZE, (size_t)(payload +3 * WSIZE));       // epilogue pred address
+    PUT(payload + 6 * WSIZE, (size_t)(payload + 4 * WSIZE));       // epilogue pred address
     PUT(payload + 7 * WSIZE, 0);                     // epologue succ address                     
     PUT(payload + 8 * WSIZE, PACK(4 * WSIZE,0));            // epilogue footer
 
