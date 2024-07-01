@@ -83,8 +83,8 @@ team_t team = {
 #define AL_HDRP(bp)        ((char *)(bp) - WSIZE)
 #define AL_FTRP(bp)        ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
 
-#define AL_NEXT_BLKP(bp)  ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
-#define AL_PREV_BLKP(bp)   ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
+#define AL_NEXT_BLKP(bp)   ((char *)(bp) + GET_SIZE(AL_HDRP(bp)))
+#define AL_PREV_BLKP(bp)   ((char *)(bp) - GET_SIZE(AL_HDRP(bp) - WSIZE))
 
 /* Given a free-block ptr bp, compute address of its header, footer, payload in pred block, and payload in succ block */
 #define HDRP(bp)        ((char *)(bp) - 3*WSIZE)
@@ -96,8 +96,8 @@ team_t team = {
 #define SUCC_VAL(bp)   ((*((size_t *)SUCCP(bp))))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
-#define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP(bp)))
-#define PREVP(bp)  ((char *)(bp) - (GET_SIZE((char *)(bp) - 4 * WSIZE)) + 4 * WSIZE)
+#define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP((char *)(bp))))
+#define PREVP(bp)  ((char *)(bp) - (GET_SIZE(HDRP((char *)(bp)) - WSIZE)))
 
 /* global variable*/
 static char *head_listp, *end_listp, *payload;
@@ -375,7 +375,7 @@ void mm_checkheap(int lineno) {
     if (PRED_VAL(bp) != 0) {
         printf("Bad prologue predecessor\n");
     }
-    if ((char *)SUCC_VAL(bp) < head_listp + 4 * WSIZE) {
+    if ((char *)SUCC_VAL(bp) < end_listp) {
         printf("Bad prologue successor\n");
     }
     if ((size_t)bp % 8) {
@@ -405,10 +405,10 @@ void mm_checkheap(int lineno) {
         printf("Bad epilogue footer\n");
     }
     if ((char *)SUCC_VAL(bp) != 0) {
-        printf("Bad epilogue predecessor\n");
-    }
-    if (!((PREVP(bp) == head_listp) || (PREVP(bp) >= end_listp + 4 * WSIZE))) {
         printf("Bad epilogue successor\n");
+    }
+    if ((char *)PRED_VAL(bp) < head_listp) {
+        printf("Bad epilogue predecessor\n");
     }
     if ((size_t)bp % 8) {
         printf("Error: epilogue %p is not double-word aligned\n", bp);
