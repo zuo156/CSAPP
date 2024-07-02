@@ -289,7 +289,7 @@ void *mm_malloc(size_t size) {
     // Search the free list for a fit (first-fit)
     if ((bp = find_fit(asize)) != NULL) {
         place_link(bp, asize);
-        return bp;
+        return bp - DSIZE; // because allocated block doesn't need pred and succ
     }
 
     // No fit found. Get more memory and place the block
@@ -299,7 +299,7 @@ void *mm_malloc(size_t size) {
     }
     place_link(bp, asize);
     checkheap(__LINE__);
-    return bp;
+    return bp - DSIZE;
 }
 
 void *mm_realloc(void *ptr, size_t size) {
@@ -320,6 +320,9 @@ static void place_link(void *bp, size_t asize) {
         // relinking
         PUT(PREDP(new_bp), (size_t)PRED_VAL(bp));
         PUT(SUCCP(new_bp), (size_t)SUCC_VAL(bp));
+        // update pred and succ to the new_bp
+        PUT(SUCCP(PRED_VAL(bp)), new_bp);
+        PUT(PREDP(SUCC_VAL(bp)), new_bp);
     }
     else {
         // allocated block
@@ -328,6 +331,7 @@ static void place_link(void *bp, size_t asize) {
         // relinking or isolating
         PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
         PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
+        
     }
 }
 
@@ -351,7 +355,7 @@ void mm_checkheap(int lineno) {
     int cnt_free2 = 0;
     int state = 0; // help checking whether coalescing
     // go through in address order
-    while (bp < (char *)mem_heap_hi()) {
+    while (bp < (char *)mem_heap_hi() && bp > head_listp) {
         if (GET_ALLOC(bp)) { // allocated
             state = 0;
         } 
