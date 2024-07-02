@@ -207,7 +207,7 @@ static void *address_coalesce(void *bp) {
     else {
         next_alloc = GET_ALLOC(HDRP(next));
     }
-    printf(next_alloc);
+    printf('%d', next_alloc);
     size_t prev_alloc;
     if (prev == end_listp) {                  // if prev is the epilogue
         prev_alloc = 1;
@@ -215,7 +215,7 @@ static void *address_coalesce(void *bp) {
     else{
         prev_alloc = GET_ALLOC(FTRP(prev));
     }
-    printf(prev_alloc);
+    printf('%d', prev_alloc);
     
 
     size_t size = GET_ALLOC(HDRP(bp));
