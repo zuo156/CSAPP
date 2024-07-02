@@ -335,7 +335,7 @@ static void place_link(void *bp, size_t asize) {
 static void *find_fit(size_t asize) { 
     void *bp;
 
-    for (bp = head_listp; (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
+    for (bp = head_listp; bp != end_listp; bp = (char *)SUCC_VAL(bp)) {
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
@@ -383,15 +383,13 @@ void mm_checkheap(int lineno) {
         printf("Error: prologue %p is not double-word aligned\n", bp);
     }
 
-    for (bp = (char *)SUCC_VAL(head_listp); (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
+    for (bp = (char *)SUCC_VAL(head_listp); bp != end_listp; bp = (char *)SUCC_VAL(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
         // check whether aligned
         // if 0->free, does it have header, pred, succ, footer?
         // if 1->allocated, does it have header and footer?
     }
-    cnt_free2 += 1;
-    checkblock(bp); 
 
     if ( cnt_free1 > cnt_free2 ) {
         printf("Might miss %i free blocks in explicit free list\n", cnt_free1 - cnt_free2);
