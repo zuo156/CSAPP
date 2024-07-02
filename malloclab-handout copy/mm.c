@@ -120,7 +120,6 @@ int mm_init(void) {
     }
 
     PUT(payload, 0);                                 // alignment padding
-
     head_listp = payload + 4 * WSIZE;
     end_listp = payload + 8 * WSIZE;
     PUT(payload + 1 * WSIZE, PACK(4 * WSIZE,0));                        // prologue header
@@ -199,7 +198,7 @@ void mm_free(void *bp) {
 static void *address_coalesce(void *bp) {
 
     char *prev = (char *)PREV_VAL(bp);
-    char *next = (char *)NEXT_VAL(bp);
+    char *next = (char *)NEXT_VAL(bp);      
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
@@ -208,7 +207,7 @@ static void *address_coalesce(void *bp) {
     else {
         next_alloc = GET_ALLOC(HDRP(next));
     }
-
+    printf(next_alloc);
     size_t prev_alloc;
     if (prev == end_listp) {                  // if prev is the epilogue
         prev_alloc = 1;
@@ -216,6 +215,8 @@ static void *address_coalesce(void *bp) {
     else{
         prev_alloc = GET_ALLOC(FTRP(prev));
     }
+    printf(prev_alloc);
+    
 
     size_t size = GET_ALLOC(HDRP(bp));
 
