@@ -195,8 +195,8 @@ void mm_free(void *bp) {
 
 static void *address_coalesce(void *bp) {
 
-    char *prev = PREVP(bp);
-    char *next = NEXTP(bp);
+    char *prev = (char *)PREV_VAL(bp);
+    char *next = (char *)NEXT_VAL(bp);
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
@@ -445,10 +445,10 @@ static void checkblock(void *bp) {     // checkblock for the free list
     
 /* heap level*/
     // pointing to valid address?
-    if ((GET(PREDP(bp)) < (char *)mem_heap_lo()) || (GET(PREDP(bp)) > (char *)mem_heap_hi())) {
+    if (((char *)PRED_VAL(bp) < (char *)mem_heap_lo()) || ((char *)PRED_VAL(bp) > (char *)mem_heap_hi())) {
         printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
     }
-    if ((GET(SUCCP(bp)) < (char *)mem_heap_lo()) || (GET(SUCCP(bp)) > (char *)mem_heap_hi())) {
+    if (((char *)SUCC_VAL(bp) < (char *)mem_heap_lo()) || ((char *)SUCC_VAL(bp) > (char *)mem_heap_hi())) {
         printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
     }
        
