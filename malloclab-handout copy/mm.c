@@ -99,6 +99,9 @@ team_t team = {
 #define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP((char *)(bp))))
 #define PREVP(bp)  ((char *)(bp) - (GET_SIZE(HDRP((char *)(bp)) - WSIZE)))
 
+#define NEXT_VAL(bp)  ((*((size_t *)NEXTP(bp))))
+#define PREV_VAL(bp)  ((*((size_t *)PREVP(bp))))
+
 /* global variable*/
 static char *head_listp, *end_listp, *payload;
 
@@ -221,7 +224,7 @@ static void *address_coalesce(void *bp) {
     }
 
     else if (prev_alloc && !next_alloc) {      /* Case 2 */
-	    size += GET_SIZE(HDRP(NEXTP(bp)));
+	    size += GET_SIZE(HDRP(NEXT_VAL(bp)));
 	    PUT(HDRP(bp), PACK(size, 0));
 	    PUT(FTRP(bp), PACK(size,0));
         // reusing the predp and succp of bp
@@ -232,7 +235,7 @@ static void *address_coalesce(void *bp) {
     }
 
     else if (!prev_alloc && next_alloc) {      /* Case 3 */
-	    size += GET_SIZE(HDRP(PREVP(bp)));
+	    size += GET_SIZE(HDRP(PREV_VAL(bp)));
 	    PUT(FTRP(bp), PACK(size, 0));
 	    PUT(HDRP(prev), PACK(size, 0));
         // moving predp and succp of bp to prev
@@ -245,7 +248,7 @@ static void *address_coalesce(void *bp) {
     }
 
     else {       /* Case 4 */
-        size += GET_SIZE(HDRP(PREVP(bp))) + GET_SIZE(FTRP(NEXTP(bp)));
+        size += GET_SIZE(HDRP(PREV_VAL(bp))) + GET_SIZE(FTRP(NEXT_VAL(bp)));
 
         PUT(HDRP(prev), PACK(size, 0));
         PUT(FTRP(next), PACK(size, 0));
@@ -312,7 +315,7 @@ static void place_link(void *bp, size_t asize) {
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
         // free block
-        new_bp = NEXTP(bp);
+        new_bp = NEXT_VAL(bp);
         PUT(HDRP(new_bp), PACK(bsize - asize, 0));
         PUT(FTRP(new_bp), PACK(bsize - asize, 0));
         // relinking
