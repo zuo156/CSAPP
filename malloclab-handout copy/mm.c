@@ -321,8 +321,8 @@ static void place_link(void *bp, size_t asize) {
         PUT(PREDP(new_bp), (size_t)PRED_VAL(bp));
         PUT(SUCCP(new_bp), (size_t)SUCC_VAL(bp));
         // update pred and succ to the new_bp
-        PUT(SUCCP(PRED_VAL(bp)), new_bp);
-        PUT(PREDP(SUCC_VAL(bp)), new_bp);
+        PUT(SUCCP(PRED_VAL(bp)), (size_t)new_bp);
+        PUT(PREDP(SUCC_VAL(bp)), (size_t)new_bp);
     }
     else {
         // allocated block
