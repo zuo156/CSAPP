@@ -200,6 +200,8 @@ static void *address_coalesce(void *bp) {
     char *prev = (char *)PREV_VAL(bp);
     char *next = (char *)NEXT_VAL(bp);      
 
+    printf((char *)mem_heap_hi);
+    printf(next);
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
         next_alloc = 1;
@@ -207,7 +209,6 @@ static void *address_coalesce(void *bp) {
     else {
         next_alloc = GET_ALLOC(HDRP(next));
     }
-    printf('next %zu \n',next_alloc);
     size_t prev_alloc;
     if (prev == end_listp) {                  // if prev is the epilogue
         prev_alloc = 1;
@@ -215,7 +216,6 @@ static void *address_coalesce(void *bp) {
     else{
         prev_alloc = GET_ALLOC(FTRP(prev));
     }
-    printf('prev %zu',prev_alloc);
     
 
     size_t size = GET_ALLOC(HDRP(bp));
