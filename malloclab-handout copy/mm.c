@@ -216,7 +216,7 @@ static void *address_coalesce(void *bp) {
         prev_alloc = GET_ALLOC(FTRP(prev));
     }
 
-    size_t size = GET_ALLOC(HDRP(bp));
+    size_t size = GET_SIZE(HDRP(bp));
 
     if (prev_alloc && next_alloc) {            /* Case 1 */
 	    return bp;
