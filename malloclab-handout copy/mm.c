@@ -383,7 +383,7 @@ void mm_checkheap(int lineno) {
         printf("Error: prologue %p is not double-word aligned\n", bp);
     }
 
-    for (bp = head_listp; (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
+    for (bp = (char *)SUCC_VAL(head_listp); (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
         // check whether aligned
