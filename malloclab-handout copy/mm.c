@@ -79,12 +79,12 @@ team_t team = {
 #define GET_SIZE(p)     ((GET(p)) & ~0x7)
 #define GET_ALLOC(p)    ((GET(p)) & 0x1)
 
-/* Given an allocated-block ptr bp, compute address of its header, footer, payload in pred block, and payload in succ block */
-#define AL_HDRP(bp)        ((char *)(bp) - WSIZE)
-#define AL_FTRP(bp)        ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
+// /* Given an allocated-block ptr bp, compute address of its header, footer, payload in pred block, and payload in succ block */
+// #define AL_HDRP(bp)        ((char *)(bp) - WSIZE)
+// #define AL_FTRP(bp)        ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
 
-#define AL_NEXT_BLKP(bp)   ((char *)(bp) + GET_SIZE(AL_HDRP(bp)))
-#define AL_PREV_BLKP(bp)   ((char *)(bp) - GET_SIZE(AL_HDRP(bp) - WSIZE))
+// #define AL_NEXT_BLKP(bp)   ((char *)(bp) + GET_SIZE(AL_HDRP(bp)))
+// #define AL_PREV_BLKP(bp)   ((char *)(bp) - GET_SIZE(AL_HDRP(bp) - WSIZE))
 
 /* Given a free-block ptr bp, compute address of its header, footer, payload in pred block, and payload in succ block */
 #define HDRP(bp)        ((char *)(bp) - 3*WSIZE)
@@ -172,6 +172,7 @@ static void *extend_heap(size_t words) {
 }
 
 void mm_free(void *bp) {
+    bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
     // update the allocation status
 
