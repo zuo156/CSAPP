@@ -362,7 +362,7 @@ void mm_checkheap(int lineno) {
         }
         bp += GET_SIZE(bp);
     }
-    cnt_free1 -= 1; // delete the prologue
+    cnt_free1 -= 2; // delete the prologue
 
     // go through in linked-list order
     bp = head_listp;
@@ -445,10 +445,10 @@ static void checkblock(void *bp) {     // checkblock for the free list
     
 /* heap level*/
     // pointing to valid address?
-    if ((GET(PREDP(bp)) < *(char *)mem_heap_lo()) || (GET(PREDP(bp)) > *(char *)mem_heap_hi())) {
+    if ((GET(PREDP(bp)) < (char *)mem_heap_lo()) || (GET(PREDP(bp)) > (char *)mem_heap_hi())) {
         printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
     }
-    if ((GET(SUCCP(bp)) < *(char *)mem_heap_lo()) || (GET(SUCCP(bp)) > *(char *)mem_heap_hi())) {
+    if ((GET(SUCCP(bp)) < (char *)mem_heap_lo()) || (GET(SUCCP(bp)) > (char *)mem_heap_hi())) {
         printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
     }
        
