@@ -197,8 +197,8 @@ void mm_free(void *bp) {
 
 static void *address_coalesce(void *bp) {
 
-    char *prev = (char *)PREV_VAL(bp);
-    char *next = (char *)NEXT_VAL(bp);      
+    char *prev = PREVP(bp);
+    char *next = NEXTP(bp);      
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
