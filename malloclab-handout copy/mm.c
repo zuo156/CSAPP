@@ -289,6 +289,7 @@ void *mm_malloc(size_t size) {
     // Search the free list for a fit (first-fit)
     if ((bp = find_fit(asize)) != NULL) {
         place_link(bp, asize);
+        checkheap(__LINE__);
         return bp - DSIZE; // because allocated block doesn't need pred and succ
     }
 
@@ -390,9 +391,6 @@ void mm_checkheap(int lineno) {
     for (bp = (char *)SUCC_VAL(head_listp); bp != end_listp; bp = (char *)SUCC_VAL(bp)) {
         cnt_free2 += 1;
         checkblock(bp); 
-        // check whether aligned
-        // if 0->free, does it have header, pred, succ, footer?
-        // if 1->allocated, does it have header and footer?
     }
 
     if ( cnt_free1 > cnt_free2 ) {
@@ -439,14 +437,15 @@ static void checkblock(void *bp) {     // checkblock for the free list
         printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
     }
     // free list contrains no allocated blocks
-    if (GET(AL_HDRP(bp)) != GET(AL_FTRP(bp))) {
+    if (GET_ALLOC(HDRP(bp)) == 1) {
         printf("Error: %p is an allocated block\n", bp);
         return;
     }
     // pointing to a free block?
-    if (GET_ALLOC(HDRP(SUCC_VAL(bp))) == 1) {
-        printf("Error: a freed block starting at %p points to an allocated block\n", bp);
-    }
+    // if (GET_ALLOC(HDRP(SUCC_VAL(bp))) == 1) {
+    //     printf("Error: a freed block starting at %p points to an allocated block\n", bp);
+    // }
+    // it's redundant, same as previous one
     
 /* heap level*/
     // pointing to valid address?
