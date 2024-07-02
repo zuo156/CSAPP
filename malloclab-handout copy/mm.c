@@ -200,8 +200,8 @@ static void *address_coalesce(void *bp) {
     char *prev = (char *)PREV_VAL(bp);
     char *next = (char *)NEXT_VAL(bp);      
 
-    printf((char *)mem_heap_hi);
-    printf(next);
+    printf('%p', (char *)mem_heap_hi);
+    printf('%p',next);
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
         next_alloc = 1;
