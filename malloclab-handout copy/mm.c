@@ -315,7 +315,7 @@ static void place_link(void *bp, size_t asize) {
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
         // free block
-        new_bp = NEXT_VAL(bp);
+        new_bp = (char *)NEXT_VAL(bp);
         PUT(HDRP(new_bp), PACK(bsize - asize, 0));
         PUT(FTRP(new_bp), PACK(bsize - asize, 0));
         // relinking
