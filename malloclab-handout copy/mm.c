@@ -200,8 +200,6 @@ static void *address_coalesce(void *bp) {
     char *prev = (char *)PREV_VAL(bp);
     char *next = (char *)NEXT_VAL(bp);      
 
-    printf('%p', (char *)mem_heap_hi);
-    printf('%p',next);
     size_t next_alloc;
     if (next > (char *)mem_heap_hi) {      // if next is end of the heap
         next_alloc = 1;
@@ -435,7 +433,7 @@ static void checkblock(void *bp) {     // checkblock for the free list
 /* list level*/    
     // pred and succ are self-consistent?
     if ((char *)PRED_VAL(SUCC_VAL(bp)) != bp) {
-        printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
+        printf("Error: a freed block starting at  is not self-consistent with its successor block\n", bp);
     }
     // free list contrains no allocated blocks
     if (GET(AL_HDRP(bp)) != GET(AL_FTRP(bp))) {
