@@ -336,7 +336,7 @@ static void *find_fit(size_t asize) {
     void *bp;
 
     for (bp = head_listp; (char *)SUCC_VAL(bp) != end_listp; bp = (char *)SUCC_VAL(bp)) {
-        if (!GET_ALLOC(HDRP(bp)) && (asize * WSIZE <= GET_SIZE(HDRP(bp)))) {
+        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
     }
