@@ -345,7 +345,7 @@ static void *find_fit(size_t asize) {
 void mm_checkheap(int lineno) {
     
     printf("checking heap at %d line\n", lineno);
-    char *bp = head_listp + 5 * WSIZE;
+    char *bp = head_listp + 5 * WSIZE; // the header of first block in address order after the epilogue
     int cnt_free1 = 0;
     int cnt_free2 = 0;
     int state = 0; // help checking whether coalescing
@@ -363,7 +363,6 @@ void mm_checkheap(int lineno) {
         }
         bp += GET_SIZE(bp);
     }
-    cnt_free1 -= 2; // delete the prologue
 
     // go through in linked-list order
     bp = head_listp;
@@ -390,6 +389,8 @@ void mm_checkheap(int lineno) {
         // if 0->free, does it have header, pred, succ, footer?
         // if 1->allocated, does it have header and footer?
     }
+    cnt_free2 += 1;
+    checkblock(bp); 
 
     if ( cnt_free1 > cnt_free2 ) {
         printf("Might miss %i free blocks in explicit free list\n", cnt_free1 - cnt_free2);
