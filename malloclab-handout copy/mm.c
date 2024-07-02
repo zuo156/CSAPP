@@ -64,7 +64,7 @@ team_t team = {
 
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
-#define CHUNKSIZE   (1<<12) /* initial heap size (bytes) */
+#define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
@@ -269,6 +269,7 @@ static void *address_coalesce(void *bp) {
 }
 
 void *mm_malloc(size_t size) {
+    // the input size is byte, not the number of the words
     size_t asize;   // adjusted block size
     size_t extendsize; // amount to extend heap if no fit
     char *bp;
@@ -292,7 +293,7 @@ void *mm_malloc(size_t size) {
     }
 
     // No fit found. Get more memory and place the block
-    extendsize = MAX(asize * WSIZE, CHUNKSIZE);
+    extendsize = MAX(asize, CHUNKSIZE);
     if ((bp = extend_heap(extendsize/WSIZE)) == NULL) {
         return NULL;
     }
