@@ -203,7 +203,7 @@ static void *address_coalesce(void *bp) {
     char *next = NEXTP(bp);      
 
     size_t next_alloc;
-    if (next > (char *)mem_heap_hi) {      // if next is end of the heap
+    if (next > (char *)mem_heap_hi()) {      // if next is end of the heap
         next_alloc = 1;
     }
     else {
