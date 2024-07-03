@@ -37,9 +37,11 @@
     
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include "mm.h"
 #include "memlib.h"
+
 
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
