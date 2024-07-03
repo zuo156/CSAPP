@@ -113,8 +113,8 @@ static void *extend_heap(size_t words);
 static void place_link(void *bp, size_t asize);
 static void *find_fit(size_t asize);
 static void *address_coalesce(void *bp);
-static void checkblock(void *bp);
-static void mm_checkheap(int lineno);
+// static void checkblock(void *bp);
+// static void mm_checkheap(int lineno);
 
 int mm_init(void) {
     // initalize empty heap
@@ -398,7 +398,7 @@ static void *find_fit(size_t asize) {
     return NULL; /* no fit */
 }
 
-void mm_checkheap(int lineno) {
+// void mm_checkheap(int lineno) {
     
     printf("checking heap at %d line\n", lineno);
     char *bp = head_listp + 5 * WSIZE; // the header of first block in address order after the epilogue
@@ -469,7 +469,7 @@ void mm_checkheap(int lineno) {
 
 }
 
-static void checkblock(void *bp) {     // checkblock for the free list
+// static void checkblock(void *bp) {     // checkblock for the free list
 
 /* Block level */
     // header and footer match
