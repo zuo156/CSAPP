@@ -327,7 +327,7 @@ void *mm_malloc(size_t size) {
     }
     else {
         // asize = DSIZE * ((size+(DSIZE)+(DSIZE-1)) / DSIZE);
-        asize = DSIZE * ((size+(DSIZE-1)) / DSIZE);
+        asize = DSIZE * ((size + DSIZE + (DSIZE-1)) / DSIZE);
     }
 
     // Search the free list for a fit (first-fit)
