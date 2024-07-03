@@ -146,7 +146,9 @@ static void *extend_heap(size_t words) {
     size_t size;
 
     // Allocate an even number of words of words to maintain alignment
-    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
+    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;   
+    // not always double-word because the choice of CHUNKSIZE
+    // but the size from the mm_malloc is always double-word
     if ((int)(bp = mem_sbrk(size)) == -1)
         return NULL;
 
@@ -197,7 +199,6 @@ void mm_free(void *bp) {
 }
 
 static void *address_coalesce(void *bp) {
-
     char *prev = PREVP(bp);
     char *next = NEXTP(bp);      
 
@@ -218,55 +219,96 @@ static void *address_coalesce(void *bp) {
 
     size_t size = GET_SIZE(HDRP(bp));
 
-    if (prev_alloc && next_alloc) {            /* Case 1 */
-	    return bp;
+    if (prev_alloc && next_alloc) {            /* no coalesce */
+        return bp;
     }
 
-    else if (prev_alloc && !next_alloc) {      /* Case 2 */
+    if (!next_alloc) {      /* coalesce with next block */
 	    size += GET_SIZE(HDRP(NEXTP(bp)));
 	    PUT(HDRP(bp), PACK(size, 0));
 	    PUT(FTRP(bp), PACK(size,0));
-        // reusing the predp and succp of bp
-        // isolating the next_block
-        PUT(SUCCP(PRED_VAL(next)),(size_t)SUCC_VAL(next));
-        PUT(PREDP(SUCC_VAL(next)),(size_t)PRED_VAL(next));
-	    return(bp);
+        /*
+        what if the succ of bp is the next free-block?
+        or what is the pred of bp is the next free-block?
+        */
+        if (next == (char *)SUCC_VAL(bp)) {
+            // update the succ of bp
+            PUT(SUCCP(bp), SUCC_VAL(next));
+            // update the pred of succ of next
+            PUT(PREDP(SUCC_VAL(next)), (size_t)bp);
+        }
+        else if (next == (char *)PRED_VAL(bp)) {
+            // update the pred of bp
+            PUT(PREDP(bp), PRED_VAL(next));
+            // update the succ of pred of next
+            PUT(SUCCP(PRED_VAL(next)), (size_t)bp);
+
+        }
+        else {
+            // reusing the predp and succp of bp
+            // isolating the next_block
+            PUT(SUCCP(PRED_VAL(next)),(size_t)SUCC_VAL(next));
+            PUT(PREDP(SUCC_VAL(next)),(size_t)PRED_VAL(next));
+        }
     }
 
-    else if (!prev_alloc && next_alloc) {      /* Case 3 */
+    if (!prev_alloc) {      /* coalesce with prev block*/
 	    size += GET_SIZE(HDRP(PREVP(bp)));
 	    PUT(FTRP(bp), PACK(size, 0));
 	    PUT(HDRP(prev), PACK(size, 0));
         // moving predp and succp of bp to prev
         PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
         PUT(PREDP(prev), (size_t)PRED_VAL(bp));
-        // isolating the prev_block
-        PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
-        PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
-	    return(prev);
+        /* 
+        what if the succ of bp is the prev free-block 
+        what if the pred of bp is the prev free-block
+        */
+        if (prev == (char *)SUCC_VAL(bp)) {
+            // update the pred of prev
+            PUT(PREDP(prev), PRED_VAL(bp));
+            // update the succ of pred of bp
+            PUT(SUCCP(PRED_VAL(bp)), prev);
+        }
+        else if (prev == (char *)PRED_VAL(bp)) {
+            // update the succ of prev
+            PUT(SUCCP(prev), SUCC_VAL(bp));
+            // update the pred of succ of bp
+            PUT(PREDP(SUCC_VAL(bp)), prev);
+        }
+        else {
+            // isolating the prev_block
+            PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+            PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
+        }
+        bp = prev;
     }
+    
+    return bp;
+    // else {       /* Case 4 */
+    //     /* 
+    //     what if the succ of the bp is the next 
+    //     and if the pred of the bp is the prev
+    //     */
+    //     size += GET_SIZE(HDRP(PREVP(bp))) + GET_SIZE(FTRP(NEXTP(bp)));
 
-    else {       /* Case 4 */
-        size += GET_SIZE(HDRP(PREVP(bp))) + GET_SIZE(FTRP(NEXTP(bp)));
+    //     PUT(HDRP(prev), PACK(size, 0));
+    //     PUT(FTRP(next), PACK(size, 0));
 
-        PUT(HDRP(prev), PACK(size, 0));
-        PUT(FTRP(next), PACK(size, 0));
+    //     // moving predp and succp of bp to prev
+    //     PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+    //     PUT(PREDP(prev), (size_t)PRED_VAL(bp));
 
-        // moving predp and succp of bp to prev
-        PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
-        PUT(PREDP(prev), (size_t)PRED_VAL(bp));
+    //     // isolating the prev_block
+    //     PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+    //     PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
 
-        // isolating the prev_block
-        PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
-        PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
-
-        // isolating the next_block
-        // it's impossible that next is prelogue or epilogue
-        // because all regular blocks are behind the prelogue and epilogue 
-        PUT(SUCCP(PRED_VAL(next)), (size_t)SUCC_VAL(next));
-        PUT(PREDP(SUCC_VAL(next)), (size_t)PRED_VAL(next));
-        return(prev);
-    }
+    //     // isolating the next_block
+    //     // it's impossible that next is prelogue or epilogue
+    //     // because all regular blocks are behind the prelogue and epilogue 
+    //     PUT(SUCCP(PRED_VAL(next)), (size_t)SUCC_VAL(next));
+    //     PUT(PREDP(SUCC_VAL(next)), (size_t)PRED_VAL(next));
+    //     return(prev);
+    // }
 }
 
 void *mm_malloc(size_t size) {
@@ -284,7 +326,8 @@ void *mm_malloc(size_t size) {
         asize = 2 * DSIZE;
     }
     else {
-        asize = DSIZE * ((size+(DSIZE)+(DSIZE-1)) / DSIZE);
+        // asize = DSIZE * ((size+(DSIZE)+(DSIZE-1)) / DSIZE);
+        asize = DSIZE * ((size+(DSIZE-1)) / DSIZE);
     }
 
     // Search the free list for a fit (first-fit)
