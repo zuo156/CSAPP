@@ -422,10 +422,10 @@ void mm_checkheap(int lineno) {
 
     // go through in linked-list order
     bp = head_listp;
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp) != 0)) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp))) {
         printf("Bad prologue header\n");
     }
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp) != 0)) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp))) {
         printf("Bad prologue footer\n");
     }
     if (PRED_VAL(bp) != 0) {
