@@ -279,8 +279,8 @@ static void *address_coalesce(void *bp) {
             PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
             PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
             // secondly, moving predp and succp of bp to prev
-            PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
-            PUT(PREDP(prev), (size_t)PRED_VAL(bp));
+            // PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+            // PUT(PREDP(prev), (size_t)PRED_VAL(bp));
 
         }
         bp = prev;
