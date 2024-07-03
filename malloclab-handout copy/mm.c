@@ -267,13 +267,13 @@ static void *address_coalesce(void *bp) {
             // update the pred of prev
             PUT(PREDP(prev), PRED_VAL(bp));
             // update the succ of pred of bp
-            PUT(SUCCP(PRED_VAL(bp)), prev);
+            PUT(SUCCP(PRED_VAL(bp)), (size_t)prev);
         }
         else if (prev == (char *)PRED_VAL(bp)) {
             // update the succ of prev
             PUT(SUCCP(prev), SUCC_VAL(bp));
             // update the pred of succ of bp
-            PUT(PREDP(SUCC_VAL(bp)), prev);
+            PUT(PREDP(SUCC_VAL(bp)), (size_t)prev);
         }
         else {
             // isolating the prev_block
