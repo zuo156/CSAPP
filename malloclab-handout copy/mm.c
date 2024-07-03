@@ -275,9 +275,12 @@ static void *address_coalesce(void *bp) {
             PUT(PREDP(SUCC_VAL(bp)), (size_t)prev);
         }
         else {
-            // firstly, isolating the prev_block
-            PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
-            PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
+            // isolateing the bp_block
+            PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
+            PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
+            // // firstly, isolating the prev_block
+            // PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+            // PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
             // secondly, moving predp and succp of bp to prev
             // PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
             // PUT(PREDP(prev), (size_t)PRED_VAL(bp));
@@ -379,7 +382,6 @@ static void place_link(void *bp, size_t asize) {
         // relinking or isolating
         PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
         PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
-        
     }
 }
 
