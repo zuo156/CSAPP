@@ -256,9 +256,6 @@ static void *address_coalesce(void *bp) {
 	    size += GET_SIZE(HDRP(PREVP(bp)));
 	    PUT(FTRP(bp), PACK(size, 0));
 	    PUT(HDRP(prev), PACK(size, 0));
-        // moving predp and succp of bp to prev
-        PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
-        PUT(PREDP(prev), (size_t)PRED_VAL(bp));
         /* 
         what if the succ of bp is the prev free-block 
         what if the pred of bp is the prev free-block
@@ -276,6 +273,9 @@ static void *address_coalesce(void *bp) {
             PUT(PREDP(SUCC_VAL(bp)), (size_t)prev);
         }
         else {
+            // moving predp and succp of bp to prev
+            PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+            PUT(PREDP(prev), (size_t)PRED_VAL(bp));
             // isolating the prev_block
             PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
             PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
