@@ -390,7 +390,7 @@ static void place_link(void *bp, size_t asize) {
 static void *find_fit(size_t asize) { 
     void *bp;
 
-    for (bp = head_listp; bp != end_listp; bp = (char *)SUCC_VAL(bp)) {
+    for (bp = (char *)SUCC_VAL(head_listp); bp != end_listp; bp = (char *)SUCC_VAL(bp)) {
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
@@ -422,10 +422,10 @@ void mm_checkheap(int lineno) {
 
     // go through in linked-list order
     bp = head_listp;
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(HDRP(bp) != 0)) {
         printf("Bad prologue header\n");
     }
-    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp))) {
+    if ((GET_SIZE(HDRP(bp)) != 4*WSIZE) || GET_ALLOC(FTRP(bp) != 0)) {
         printf("Bad prologue footer\n");
     }
     if (PRED_VAL(bp) != 0) {
