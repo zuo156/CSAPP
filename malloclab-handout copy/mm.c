@@ -273,12 +273,13 @@ static void *address_coalesce(void *bp) {
             PUT(PREDP(SUCC_VAL(bp)), (size_t)prev);
         }
         else {
-            // moving predp and succp of bp to prev
-            PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
-            PUT(PREDP(prev), (size_t)PRED_VAL(bp));
-            // isolating the prev_block
+            // firstly, isolating the prev_block
             PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
             PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
+            // secondly, moving predp and succp of bp to prev
+            PUT(SUCCP(prev), (size_t)SUCC_VAL(bp));
+            PUT(PREDP(prev), (size_t)PRED_VAL(bp));
+
         }
         bp = prev;
     }
@@ -479,6 +480,7 @@ static void checkblock(void *bp) {     // checkblock for the free list
     // pred and succ are self-consistent?
     if ((char *)PRED_VAL(SUCC_VAL(bp)) != bp) {
         printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
+        exit(1);
     }
     // free list contrains no allocated blocks
     if (GET_ALLOC(HDRP(bp)) == 1) {
