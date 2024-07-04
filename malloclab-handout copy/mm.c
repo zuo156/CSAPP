@@ -62,8 +62,8 @@ team_t team = {
 
 // begin macros
 // Basic constant and macros
-// #define checkheap(lineno) mm_checkheap(lineno)
-#define checkheap(lineno)
+#define checkheap(lineno) mm_checkheap(lineno)
+// #define checkheap(lineno)
 
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
