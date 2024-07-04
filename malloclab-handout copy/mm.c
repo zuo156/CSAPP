@@ -374,7 +374,7 @@ void *mm_realloc(void *ptr, size_t size) {
         asize = DSIZE * ((size + DSIZE + (DSIZE-1)) / DSIZE);
     }
 
-    *bp = ptr + DSIZE;
+    bp = ptr + DSIZE;
     old_size = GET_SIZE(HDRP(bp));
 
     // whether the next block is free?
