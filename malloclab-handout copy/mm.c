@@ -392,7 +392,7 @@ void *mm_realloc(void *ptr, size_t size) {
         old_size += GET_SIZE(HDRP(next));
     }
     
-    if ((old_size - asize) >= 2 * DSIZE) {
+    if ((int)(old_size - asize) >= 2 * DSIZE) {
         // it can keep its location
         // reallocate block
         PUT(HDRP(bp), PACK(asize, 1));
@@ -430,7 +430,7 @@ void *mm_realloc(void *ptr, size_t size) {
         return bp - DSIZE;
         // or return ptr;
     }
-    else if ((old_size - asize) >= 0) {
+    else if ((int)(old_size - asize) >= 0) {
         if (!next_alloc) { // if next is free
             // update the size of block
             PUT(HDRP(bp), PACK(old_size, 1));
