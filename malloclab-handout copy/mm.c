@@ -403,7 +403,9 @@ void *mm_realloc(void *ptr, size_t size) {
         PUT(FTRP(free_bp), PACK(old_size - asize, 0));
         // put it into the begining of the explicit list
         PUT(PREDP(SUCC_VAL(head_listp)), (size_t)free_bp);
+        PUT(SUCCP(free_bp),SUCC_VAL(head_listp));
         PUT(SUCCP(head_listp), (size_t)free_bp);
+        PUT(PREDP(free_bp), head_listp);
         address_coalesce(free_bp);
         return bp - DSIZE;
         // or return ptr;
