@@ -30,11 +30,11 @@
     | hdr(8:a) | head_listp | succ | ftr(8:a) |
     Epilogue block
     | hdr(8:a) | pred | end_listp | ftr(8:a) |
-        Regular block
+    Regular block
     | hdr(8:a) |( pred | payload (| padding) | succ |) ftr(8:a) |
     where 8 is 8 bytes
     Therefore, the smallest block size is 4-word
-    
+    Prologue and Epilogue are always at the beginning of the heap, following by the regular block
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -325,7 +325,7 @@ void *mm_malloc(size_t size) {
     char *bp;
 
     /* Ignore suprious request */
-    if (size <=0 )
+    if (size <= 0)
         return NULL;
     
     // Adjust block size to include header and footer and to satisify alignment reqs.
@@ -333,7 +333,6 @@ void *mm_malloc(size_t size) {
         asize = 2 * DSIZE;
     }
     else {
-        // asize = DSIZE * ((size+(DSIZE)+(DSIZE-1)) / DSIZE);
         asize = DSIZE * ((size + DSIZE + (DSIZE-1)) / DSIZE);
     }
 
@@ -355,7 +354,73 @@ void *mm_malloc(size_t size) {
 }
 
 void *mm_realloc(void *ptr, size_t size) {
-    return NULL;
+    char *bp;
+    size_t asize;
+    size_t old_size;
+
+    if (ptr == NULL) {
+        return mm_malloc(size);
+    }
+    
+    if (size <= 0) {
+        return NULL;
+    }
+
+    // Adjust block size to include header and footer and to satisify alignment reqs.
+    if (size <= DSIZE) {
+        asize = 2 * DSIZE;
+    }
+    else {
+        asize = DSIZE * ((size + DSIZE + (DSIZE-1)) / DSIZE);
+    }
+
+    *bp = ptr + DSIZE;
+    old_size = GET_SIZE(HDRP(bp));
+
+    // whether the next block is free?
+    char *next = NEXTP(bp); 
+    size_t next_alloc;
+
+    if (next > (char *)mem_heap_hi()) {      // whether next is end of the heap
+        next_alloc = 1;
+    }
+    else {
+        next_alloc = GET_ALLOC(HDRP(next));
+    }
+    // if it is free, update the old_size
+    if (!next_alloc) {
+        old_size += GET_SIZE(HDRP(next));
+    }
+    
+    if (old_size >= asize) {
+        // it can keep its location
+        // reallocate block
+        PUT(HDRP(bp), PACK(asize, 1));
+        PUT(FTRP(bp), PACK(asize, 1));
+        // new free block
+        char *free_bp = (char *)NEXTP(bp);
+        PUT(HDRP(free_bp), PACK(old_size - asize, 0));
+        PUT(FTRP(free_bp), PACK(old_size - asize, 0));
+        // put it into the begining of the explicit list
+        PUT(PREDP(SUCC_VAL(head_listp)), (size_t)free_bp);
+        PUT(SUCCP(head_listp), (size_t)free_bp);
+        address_coalesce(free_bp);
+        return bp - DSIZE;
+        // or return ptr;
+    }
+    else { 
+        // find a new block
+        char *new_bp = mm_malloc(asize);
+        // copy the old content to the new block
+        int length = GET_SIZE(HDRP(bp));
+        for(int i = 0; i < length; i++) {
+            PUT(new_bp + i * WSIZE, GET(ptr + i * WSIZE));
+        }
+        // free the old block
+        mm_free(ptr);
+        return new_bp;
+    }
+    
 }
 
 static void place_link(void *bp, size_t asize) {
