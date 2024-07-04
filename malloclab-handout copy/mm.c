@@ -405,7 +405,7 @@ void *mm_realloc(void *ptr, size_t size) {
         PUT(PREDP(SUCC_VAL(head_listp)), (size_t)free_bp);
         PUT(SUCCP(free_bp),SUCC_VAL(head_listp));
         PUT(SUCCP(head_listp), (size_t)free_bp);
-        PUT(PREDP(free_bp), head_listp);
+        PUT(PREDP(free_bp), (size_t)head_listp);
         address_coalesce(free_bp);
         return bp - DSIZE;
         // or return ptr;
