@@ -392,23 +392,56 @@ void *mm_realloc(void *ptr, size_t size) {
         old_size += GET_SIZE(HDRP(next));
     }
     
-    if (old_size >= asize) {
+    if ((old_size - asize) >= 2 * DSIZE) {
         // it can keep its location
         // reallocate block
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
-        // new free block
+        // free block
         char *free_bp = (char *)NEXTP(bp);
+        // header and footer size
         PUT(HDRP(free_bp), PACK(old_size - asize, 0));
         PUT(FTRP(free_bp), PACK(old_size - asize, 0));
-        // put it into the begining of the explicit list
-        PUT(PREDP(SUCC_VAL(head_listp)), (size_t)free_bp);
-        PUT(SUCCP(free_bp),SUCC_VAL(head_listp));
-        PUT(SUCCP(head_listp), (size_t)free_bp);
-        PUT(PREDP(free_bp), (size_t)head_listp);
-        address_coalesce(free_bp);
+
+        if (!next_alloc) { // if next is free
+            // relinking
+            PUT(PREDP(free_bp), (size_t)PRED_VAL(next));
+            PUT(SUCCP(free_bp), (size_t)SUCC_VAL(next));
+            // update pred and succ to the free_bp
+            PUT(SUCCP(PRED_VAL(next)), (size_t)free_bp);
+            PUT(PREDP(SUCC_VAL(next)), (size_t)free_bp);
+        }
+        else { // if next is allocated
+            // put the remain at the begining of the heap
+
+            // store the old succ addres in prologue
+            char *old = (char *)SUCC_VAL(head_listp);
+
+            // update the succ address in prologue
+            PUT(SUCCP(head_listp), (size_t)free_bp);
+
+            // linking this free block
+            PUT(PREDP(free_bp), (size_t)head_listp);
+            PUT(SUCCP(free_bp), (size_t)old);
+
+            PUT(PREDP(old), (size_t)free_bp);
+            address_coalesce(free_bp);
+        }
         return bp - DSIZE;
         // or return ptr;
+    }
+    else if ((old_size - asize) >= 0) {
+        if (!next_alloc) { // if next is free
+            // update the size of block
+            PUT(HDRP(bp), PACK(old_size, 1));
+            PUT(FTRP(bp), PACK(old_size, 1));
+            // isolate the occupied freed block
+            PUT(SUCCP(PRED_VAL(next)), (size_t)SUCC_VAL(next));
+            PUT(PREDP(SUCC_VAL(next)), (size_t)PRED_VAL(next));
+            return ptr;
+        } else { // if next isn't free, keep origin size
+            return ptr;
+        }
     }
     else { 
         // find a new block
@@ -426,6 +459,7 @@ void *mm_realloc(void *ptr, size_t size) {
 }
 
 static void place_link(void *bp, size_t asize) {
+    // bp is the situation in freed block
     size_t bsize = GET_SIZE(HDRP(bp));
     char *new_bp;
     if ((bsize - asize) >= 2 * DSIZE) {
