@@ -411,10 +411,10 @@ void *mm_realloc(void *ptr, size_t size) {
     else { 
         // find a new block
         char *new_bp = mm_malloc(size);
-        // copy the old content to the new block
-        int length = GET_SIZE(HDRP(bp)) - 2;
+        // copy the old content to the new block byte by byte
+        int length = GET_SIZE(HDRP(bp)) - 2 * WSIZE;
         for(int i = 0; i < length; i++) {
-            PUT(new_bp + i * WSIZE, GET(ptr + i * WSIZE));
+            PUT(new_bp + i, GET(ptr + i));
         }
         // free the old block
         mm_free(ptr);
