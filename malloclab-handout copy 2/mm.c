@@ -354,7 +354,6 @@ void *mm_malloc(size_t size) {
 
 void *mm_realloc(void *ptr, size_t size) {
     char *bp = ptr + DSIZE;
-    size_t asize;
     size_t old_size;
     size_t predecessor, successor;
 
@@ -382,9 +381,8 @@ void *mm_realloc(void *ptr, size_t size) {
     for (int i = 2; i < old_size - 2; i ++){
         PUT(new_bp + i * WSIZE, GET(ptr + i * WSIZE));
     }
-    
+
     return new_bp;
-    
 }
 
 static void place_link(void *bp, size_t asize) {
