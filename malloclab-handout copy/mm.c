@@ -412,7 +412,7 @@ void *mm_realloc(void *ptr, size_t size) {
         // find a new block
         char *new_bp = mm_malloc(size);
         // copy the old content to the new block
-        int length = GET_SIZE(HDRP(bp));
+        int length = GET_SIZE(HDRP(bp)) - 2;
         for(int i = 0; i < length; i++) {
             PUT(new_bp + i * WSIZE, GET(ptr + i * WSIZE));
         }
