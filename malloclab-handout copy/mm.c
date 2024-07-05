@@ -399,17 +399,20 @@ void *mm_realloc(void *ptr, size_t size) {
         PUT(FTRP(bp), PACK(asize, 1));
         // free block
         char *free_bp = (char *)NEXTP(bp);
+        // cache to avoid overwritten
+        size_t pred_next = PRED_VAL(next);
+        size_t succ_next = SUCC_VAL(next);
         // header and footer size
         PUT(HDRP(free_bp), PACK(old_size - asize, 0));
         PUT(FTRP(free_bp), PACK(old_size - asize, 0));
 
         if (!next_alloc) { // if next is free
             // relinking
-            PUT(PREDP(free_bp), (size_t)PRED_VAL(next));
-            PUT(SUCCP(free_bp), (size_t)SUCC_VAL(next));
+            PUT(PREDP(free_bp), pred_next); // next can be overwritten by line 403 and line 404
+            PUT(SUCCP(free_bp), succ_next);
             // update pred and succ to the free_bp
-            PUT(SUCCP(PRED_VAL(next)), (size_t)free_bp);
-            PUT(PREDP(SUCC_VAL(next)), (size_t)free_bp);
+            PUT(SUCCP(pred_next), (size_t)free_bp);
+            PUT(PREDP(succ_next), (size_t)free_bp);
         }
         else { // if next is allocated
             // put the remain at the begining of the heap
