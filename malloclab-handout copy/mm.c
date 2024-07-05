@@ -394,14 +394,14 @@ void *mm_realloc(void *ptr, size_t size) {
     
     if ((int)(old_size - asize) >= 2 * DSIZE) {
         // it can keep its location
+        // cache to avoid overwritten
+        size_t pred_next = PRED_VAL(next);
+        size_t succ_next = SUCC_VAL(next);
         // reallocate block
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
         // free block
         char *free_bp = (char *)NEXTP(bp);
-        // cache to avoid overwritten
-        size_t pred_next = PRED_VAL(next);
-        size_t succ_next = SUCC_VAL(next);
         // header and footer size
         PUT(HDRP(free_bp), PACK(old_size - asize, 0));
         PUT(FTRP(free_bp), PACK(old_size - asize, 0));
