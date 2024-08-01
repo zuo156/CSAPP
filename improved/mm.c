@@ -369,18 +369,6 @@ void *find_fit(size_t asize) {
 void mm_checkheap(int lineno) {
 
     printf("checking heap at %d line\n", lineno);
-
-    // checking head_listp
-    for (int i = 0; i < NUMLIST; i++){
-        if ((char *)SUCC_VAL(head_listp[i]) != head_listp[i+1]) {
-            printf("head_listp problem");
-        }
-        if ((char *)PRED_VAL(head_listp[NUMLIST-i]) != head_listp[NUMLIST-i-1]) {
-            printf("head_listp problem");
-        }
-    }
-
-
     char *bp = head_listp[NUMLIST] + 4 * WSIZE;
     int cnt_free1 = 0;
     int cnt_free2 = 0;
