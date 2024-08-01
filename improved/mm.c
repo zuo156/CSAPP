@@ -25,7 +25,7 @@ team_t team = {
 // begin macros
 // Basic constant and macros
 
-#define NUMLIST     5
+#define NUMLIST     8
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
 #define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
@@ -81,7 +81,7 @@ int size2list(int size);
 
 int mm_init(void) {
     // initalize empty heap
-    if ((payload = mem_sbrk(21 * WSIZE)) == NULL) { 
+    if ((payload = mem_sbrk((NUMLIST*4+5) * WSIZE)) == NULL) { 
         return -1;
     }
 
