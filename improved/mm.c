@@ -396,6 +396,14 @@ void mm_checkheap(int lineno) {
         }
     }
 
+    if ( cnt_free1 > cnt_free2 ) {
+        printf("Might miss %i free blocks in explicit free list\n", cnt_free1 - cnt_free2);
+    }
+    if ( cnt_free1 < cnt_free2 ) {
+        printf("Might duplicate %i free blocks in explicit free list\n", cnt_free2 - cnt_free1);
+    }
+
+
 }
 
 void checkblock(void *bp, int i) {
@@ -408,6 +416,7 @@ void checkblock(void *bp, int i) {
     if ((size_t)bp % 8) {
         printf("Error: %p is not doubleword aligned\n", bp);
     }
+
 /* list level*/    
     // pred and succ are self-consistent?
     if ((char *)PRED_VAL(SUCC_VAL(bp)) != bp) {
@@ -424,8 +433,8 @@ void checkblock(void *bp, int i) {
     //     printf("Error: a freed block starting at %p points to an allocated block\n", bp);
     // }
     // it's redundant, same as previous one
-    if (size2list((int)GET_SIZE(bp)) != i) {
-        printf("Block at %p are not in its corresponding segregated list %d", bp, i);
+    if (size2list(GET_SIZE(HDRP(bp))) != i) {
+        printf("Block at %p are not in its corresponding segregated list %d\n", bp, i);
     }
 
 /* heap level*/
