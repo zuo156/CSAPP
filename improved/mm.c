@@ -115,7 +115,6 @@ int mm_init(void) {
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
-    checkheap(__LINE__);
     return 0;
 }
 
@@ -162,6 +161,7 @@ int size2list(int size) {
 }
 
 void mm_free(void *bp) {
+    checkheap(__LINE__);
     printf("freesing pointer %p\n", bp);
     bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
@@ -185,7 +185,6 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
-    checkheap(__LINE__);
 }
 
 void *address_coalesce(void *bp) {
@@ -281,6 +280,7 @@ void *address_coalesce(void *bp) {
 }
 
 void *mm_malloc(size_t size) {
+    checkheap(__LINE__);
     printf("malloc for size %d\n", size);
     // the input size is byte, not the number of the words
     size_t asize;   // adjusted block size
@@ -302,7 +302,6 @@ void *mm_malloc(size_t size) {
     // Search the free list for a fit (first-fit)
     if ((bp = find_fit(asize)) != NULL) {
         place_link(bp, asize);
-        checkheap(__LINE__);
         return bp - DSIZE; // because allocated block doesn't need pred and succ
     }
 
@@ -312,7 +311,6 @@ void *mm_malloc(size_t size) {
         return NULL;
     }
     place_link(bp, asize);
-    checkheap(__LINE__);
     return bp - DSIZE;
 }
 
@@ -373,6 +371,7 @@ void mm_checkheap(int lineno) {
     int cnt_free1 = 0;
     int cnt_free2 = 0;
     int state = 0; // help checking whether coalesing
+
     // go through in address order
     while (bp < (char *)mem_heap_hi() && bp > head_listp[NUMLIST]) {
         if (GET_ALLOC(bp)) {
