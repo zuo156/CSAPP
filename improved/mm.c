@@ -150,11 +150,12 @@ void *extend_heap(size_t words) {
 }
 
 int size2list(int size) {
-    for (int i = 0; i < NUMLIST; i++) {
+    for (int i = 0; i < NUMLIST-1; i++) {
         if (size <= (1<<(i+3))) {
             return i;
         }
     }
+    return NUMLIST;
 }
 
 void mm_free(void *bp) {
