@@ -150,18 +150,8 @@ void *extend_heap(size_t words) {
 }
 
 int size2list(int size) {
-    // if (size <= 128){
-    //     return 0;
-    // } else if (size <= 512) {
-    //     return 1;
-    // }
-    // else if (size <= 1024) {
-    //     return 2;
-    // } else {
-    //     return 3;
-    // }
     for (int i = 0; i < NUMLIST; i++) {
-        if (size <= 1<<(i+3)) {
+        if (size <= (1<<(i+3))) {
             return i;
         }
     }
