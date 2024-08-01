@@ -25,7 +25,7 @@ team_t team = {
 // begin macros
 // Basic constant and macros
 
-#define NUMLIST     4
+#define NUMLIST     8
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
 #define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
@@ -69,11 +69,6 @@ team_t team = {
 /* global variable*/
 // char *list0, *list1, *list2, *list3, *end_list, *payload;
 char *head_listp[NUMLIST+1], *payload;
-/*  list0: 0-128
-    list1: 128-512
-    list2: 512-1024
-    list3: 1024-
-*/
 
 /* function protoptypes for internal helper routines */
 void *extend_heap(size_t words);
@@ -155,15 +150,20 @@ void *extend_heap(size_t words) {
 }
 
 int size2list(int size) {
-    if (size <= 128){
-        return 0;
-    } else if (size <= 512) {
-        return 1;
-    }
-    else if (size <= 1024) {
-        return 2;
-    } else {
-        return 3;
+    // if (size <= 128){
+    //     return 0;
+    // } else if (size <= 512) {
+    //     return 1;
+    // }
+    // else if (size <= 1024) {
+    //     return 2;
+    // } else {
+    //     return 3;
+    // }
+    for (int i = 0; i < NUMLIST; i++) {
+        if (size <= 1<<(i+3)) {
+            return i;
+        }
     }
 }
 
