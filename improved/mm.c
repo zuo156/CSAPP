@@ -193,8 +193,6 @@ void mm_free(void *bp) {
 void *address_coalesce(void *bp) {
     char *prev = PREVP(bp);
     char *next = NEXTP(bp);
-    int index;
-    char *old;
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi()) {      // if next is end of the heap
@@ -255,7 +253,6 @@ void *address_coalesce(void *bp) {
         what if the succ of bp is the prev free-block 
         what if the pred of bp is the prev free-block
         */
-        index = size2list(size);
         if (prev == (char *)SUCC_VAL(bp)) {
             PUT(SUCCP(PRED_VAL(bp)), SUCC_VAL(prev));
             PUT(PREDP(SUCC_VAL(prev)), PRED_VAL(bp));
@@ -275,8 +272,8 @@ void *address_coalesce(void *bp) {
         bp = prev;
     }
     // move the merged free block to the begining of the specific list
-    index = size2list(size);
-    old = SUCC_VAL(head_listp[index]);
+    int index = size2list(size);
+    char *old = (char *)SUCC_VAL(head_listp[index]);
     PUT(SUCCP(head_listp[index]), (size_t)bp);
     PUT(PREDP(bp), (size_t)head_listp[index]);
     PUT(SUCCP(bp), (size_t)old);
@@ -285,7 +282,7 @@ void *address_coalesce(void *bp) {
     return bp;
 }
 
-static void *mm_malloc(size_t size) {
+void *mm_malloc(size_t size) {
     // the input size is byte, not the number of the words
     size_t asize;   // adjusted block size
     size_t extendsize; // amount to extend heap if no fit
@@ -319,7 +316,7 @@ static void *mm_malloc(size_t size) {
 }
 
 void *mm_realloc(void *ptr, size_t size) {
-    return;
+    return NULL;
 }
 
 void place_link(void *bp, size_t asize) {
@@ -340,7 +337,7 @@ void place_link(void *bp, size_t asize) {
 
         // move the merged free block to the begining of the specific list
         int index = size2list(bsize-asize);
-        char *old = SUCC_VAL(head_listp[index]);
+        char *old = (char *)SUCC_VAL(head_listp[index]);
         PUT(SUCCP(head_listp[index]), (size_t)new_bp);
         PUT(PREDP(new_bp), (size_t)head_listp[index]);
         PUT(SUCCP(new_bp), (size_t)old);
