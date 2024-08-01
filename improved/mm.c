@@ -392,7 +392,8 @@ void mm_checkheap(int lineno) {
         }
         else {
             if (state == 1) {
-                printf("Having contiguous free block that excaped coalescing at %p\n", bp);
+                printf("Having contiguous free block that escaped coalescing at %p\n", bp);
+                exit(1);
             }
             cnt_free1 += 1;
             state = 1;
