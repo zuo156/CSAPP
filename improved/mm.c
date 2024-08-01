@@ -155,7 +155,7 @@ int size2list(int size) {
             return i;
         }
     }
-    return NUMLIST;
+    return NUMLIST-1;
 }
 
 void mm_free(void *bp) {
