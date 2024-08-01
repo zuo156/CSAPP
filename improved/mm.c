@@ -25,7 +25,7 @@ team_t team = {
 // begin macros
 // Basic constant and macros
 
-#define NUMLIST     8
+#define NUMLIST     20
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
 #define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
