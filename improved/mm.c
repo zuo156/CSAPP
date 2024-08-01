@@ -386,7 +386,7 @@ void mm_checkheap(int lineno) {
             cnt_free1 += 1;
             state = 1;
         }
-        bp += GET_SIZE(bp);
+        bp += GET_SIZE(HDRP(bp));
     }
     // go through the linked list
     for (int i = 0; i < NUMLIST; i ++) {
