@@ -374,7 +374,7 @@ void mm_checkheap(int lineno) {
 
     // go through in address order
     while (bp < (char *)mem_heap_hi() && bp > head_listp[NUMLIST]) {
-        if (GET_ALLOC(bp)) {
+        if (GET_ALLOC(HDRP(bp))) {
             state = 0;
         }
         else {
