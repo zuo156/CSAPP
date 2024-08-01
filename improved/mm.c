@@ -24,6 +24,8 @@ team_t team = {
 
 // begin macros
 // Basic constant and macros
+// #define checkheap(lineno) mm_checkheap(lineno)
+#define checkheap(lineno)
 
 #define NUMLIST     5
 #define WSIZE       4       /* word size (bytes) */
@@ -75,9 +77,9 @@ void *extend_heap(size_t words);
 void place_link(void *bp, size_t asize);
 void *find_fit(size_t asize);
 void *address_coalesce(void *bp);
-void checkblock(void *bp);
 int size2list(int size);
-
+void mm_checkheap(int lineno);
+void checkblock(void *bp, int i);
 
 int mm_init(void) {
     // initalize empty heap
@@ -113,6 +115,7 @@ int mm_init(void) {
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
+    checkheap(__LINE__);
     return 0;
 }
 
@@ -159,6 +162,7 @@ int size2list(int size) {
 }
 
 void mm_free(void *bp) {
+    printf("freesing pointer %p\n", bp);
     bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
     // update the allocation status
@@ -181,6 +185,7 @@ void mm_free(void *bp) {
     // looking at the address-adjacent block to see whether they are also free
     // if so combine them
     address_coalesce(bp);
+    checkheap(__LINE__);
 }
 
 void *address_coalesce(void *bp) {
@@ -276,6 +281,7 @@ void *address_coalesce(void *bp) {
 }
 
 void *mm_malloc(size_t size) {
+    printf("malloc for size %d\n", size);
     // the input size is byte, not the number of the words
     size_t asize;   // adjusted block size
     size_t extendsize; // amount to extend heap if no fit
@@ -296,6 +302,7 @@ void *mm_malloc(size_t size) {
     // Search the free list for a fit (first-fit)
     if ((bp = find_fit(asize)) != NULL) {
         place_link(bp, asize);
+        checkheap(__LINE__);
         return bp - DSIZE; // because allocated block doesn't need pred and succ
     }
 
@@ -305,6 +312,7 @@ void *mm_malloc(size_t size) {
         return NULL;
     }
     place_link(bp, asize);
+    checkheap(__LINE__);
     return bp - DSIZE;
 }
 
@@ -351,13 +359,92 @@ void *find_fit(size_t asize) {
     void *bp, *start;
     start = head_listp[size2list(asize)];
     for (bp = (char *)SUCC_VAL(start); bp != head_listp[NUMLIST]; bp = (char *)SUCC_VAL(bp)) {
-        if (bp < (void *)mem_heap_lo() || bp > (void *)mem_heap_hi()) {
-            printf("Error: bp out of bounds\n");
-            return NULL;
-        }
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
     }
     return NULL; /* no fit */
+}
+
+void mm_checkheap(int lineno) {
+
+    printf("checking heap at %d line\n", lineno);
+
+    // checking head_listp
+    for (int i = 0; i < NUMLIST; i++){
+        if ((char *)SUCC_VAL(head_listp[i]) != head_listp[i+1]) {
+            printf("head_listp problem");
+        }
+        if ((char *)PRED_VAL(head_listp[NUMLIST-i]) != head_listp[NUMLIST-i-1]) {
+            printf("head_listp problem");
+        }
+    }
+
+
+    char *bp = head_listp[NUMLIST] + 4 * WSIZE;
+    int cnt_free1 = 0;
+    int cnt_free2 = 0;
+    int state = 0; // help checking whether coalesing
+    // go through in address order
+    while (bp < (char *)mem_heap_hi() && bp > head_listp[NUMLIST]) {
+        if (GET_ALLOC(bp)) {
+            state = 0;
+        }
+        else {
+            if (state == 1) {
+                printf("Having contiguous free block that excaped coalescing at %p\n", bp);
+            }
+            cnt_free1 += 1;
+            state = 1;
+        }
+        bp += GET_SIZE(bp);
+    }
+    // go through the linked list
+    for (int i = 0; i < NUMLIST; i ++) {
+        for (bp = (char *)SUCC_VAL(head_listp[i]); bp != head_listp[i+1]; bp = (char *)SUCC_VAL(bp)) {
+            cnt_free2 += 1;
+            checkblock(bp, i);
+        }
+    }
+
+}
+
+void checkblock(void *bp, int i) {
+/* Block level */
+    // header and footer match
+    if (!(GET(HDRP(bp)) == GET(FTRP(bp)))) {
+        printf("Error: in a freed block starting at %p, header does not match footer\n", bp);
+    }
+    // check whether aligned
+    if ((size_t)bp % 8) {
+        printf("Error: %p is not doubleword aligned\n", bp);
+    }
+/* list level*/    
+    // pred and succ are self-consistent?
+    if ((char *)PRED_VAL(SUCC_VAL(bp)) != bp) {
+        printf("Error: a freed block starting at %p is not self-consistent with its successor block\n", bp);
+        exit(1);
+    }
+    // free list contrains no allocated blocks
+    if (GET_ALLOC(HDRP(bp)) == 1) {
+        printf("Error: %p is an allocated block\n", bp);
+        return;
+    }
+    // pointing to a free block?
+    // if (GET_ALLOC(HDRP(SUCC_VAL(bp))) == 1) {
+    //     printf("Error: a freed block starting at %p points to an allocated block\n", bp);
+    // }
+    // it's redundant, same as previous one
+    if (size2list((int)GET_SIZE(bp)) != i) {
+        printf("Block at %p are not in its corresponding segregated list %d", bp, i);
+    }
+    
+/* heap level*/
+    // pointing to valid address?
+    if (((char *)PRED_VAL(bp) < (char *)mem_heap_lo()) || ((char *)PRED_VAL(bp) > (char *)mem_heap_hi())) {
+        printf("Error: in a freed block starting at %p, invalid predecesor pointer\n", bp);
+    }
+    if (((char *)SUCC_VAL(bp) < (char *)mem_heap_lo()) || ((char *)SUCC_VAL(bp) > (char *)mem_heap_hi())) {
+        printf("Error: in a freed block starting at %p, invalid successor pointer\n", bp);
+    }
 }
