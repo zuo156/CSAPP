@@ -69,10 +69,10 @@ team_t team = {
 /* global variable*/
 // char *list0, *list1, *list2, *list3, *end_list, *payload;
 char *head_listp[NUMLIST+1], *payload;
-/*  list0: 0-256
-    list1: 256-1024
-    list2: 1024-4096
-    list3: 4096-
+/*  list0: 0-128
+    list1: 128-512
+    list2: 512-1024
+    list3: 1024-
 */
 
 /* function protoptypes for internal helper routines */
@@ -113,7 +113,7 @@ int mm_init(void) {
     PUT(head_listp[NUMLIST], PACK(4 * WSIZE,0));                           // footer 
 
     PUT(head_listp[NUMLIST-1] - 1 * WSIZE, (size_t)head_listp[NUMLIST]);
-    
+
     // Extend the empty heap with a free block of CHUNKSIZE bytes 
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
@@ -155,12 +155,12 @@ void *extend_heap(size_t words) {
 }
 
 int size2list(int size) {
-    if (size <= 256){
+    if (size <= 128){
         return 0;
-    } else if (size <= 1024) {
+    } else if (size <= 512) {
         return 1;
     }
-    else if (size <= 4096) {
+    else if (size <= 1024) {
         return 2;
     } else {
         return 3;
