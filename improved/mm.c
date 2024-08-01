@@ -95,14 +95,14 @@ int mm_init(void) {
     head_listp[0] = payload + 4 * WSIZE;
     PUT(payload + 1 * WSIZE, PACK(4 * WSIZE,0));                        // header
     PUT(payload + 2 * WSIZE, 0);                                        // pred address
-    PUT(payload + 3 * WSIZE, (size_t)(payload + 8 * WSIZE));            // succ address
+    // PUT(payload + 3 * WSIZE, (size_t)(payload + 8 * WSIZE));            // succ address
     PUT(payload + 4 * WSIZE, PACK(4 * WSIZE,0));   
 
     for (int i = 1; i < NUMLIST; i++) {
         head_listp[i] = payload + 4*(i+1) * WSIZE;
         PUT(head_listp[i] - 3 * WSIZE, PACK(4 * WSIZE,0));               // header
-        PUT(head_listp[i] - 2 * WSIZE, (size_t)head_listp[i-1]);   // pred address                         // pred address
-        PUT(head_listp[i] - 1 * WSIZE, (size_t)head_listp[i+1]);   // succ address
+        PUT(head_listp[i-1] - 1 * WSIZE, (size_t)head_listp[i]);   // succ address of the previous head_listp
+        PUT(head_listp[i] - 2 * WSIZE, (size_t)head_listp[i-1]);   // pred address            
         PUT(head_listp[i], PACK(4 * WSIZE,0));                           // footer 
     }
 
@@ -112,6 +112,8 @@ int mm_init(void) {
     PUT(head_listp[NUMLIST] - 1 * WSIZE, 0);                               // succ address
     PUT(head_listp[NUMLIST], PACK(4 * WSIZE,0));                           // footer 
 
+    PUT(head_listp[NUMLIST-1] - 1 * WSIZE, (size_t)head_listp[NUMLIST]);
+    
     // Extend the empty heap with a free block of CHUNKSIZE bytes 
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
