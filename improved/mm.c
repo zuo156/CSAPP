@@ -351,6 +351,10 @@ void *find_fit(size_t asize) {
     void *bp, *start;
     start = head_listp[size2list(asize)];
     for (bp = (char *)SUCC_VAL(start); bp != head_listp[NUMLIST]; bp = (char *)SUCC_VAL(bp)) {
+        if (bp < (void *)mem_heap_lo() || bp > (void *)mem_heap_hi()) {
+            printf("Error: bp out of bounds\n");
+            return NULL;
+        }
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
             return bp;
         }
