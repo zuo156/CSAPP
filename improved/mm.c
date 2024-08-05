@@ -27,7 +27,7 @@ team_t team = {
 // #define checkheap(lineno) mm_checkheap(lineno)
 #define checkheap(lineno)
 
-#define NUMLIST     5
+#define NUMLIST     20
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
 #define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
@@ -154,7 +154,7 @@ void *extend_heap(size_t words) {
 
 int size2list(int size) {
     for (int i = 0; i < NUMLIST-1; i++) {
-        if (size <= (1<<(i+6))) {
+        if (size <= (1<<(i+1))) {
             return i;
         }
     }

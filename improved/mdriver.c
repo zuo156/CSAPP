@@ -350,7 +350,7 @@ int main(int argc, char **argv)
 	       p1*100, 
 	       p2*100, 
 	       perfindex);
-	
+	printf("actual throughput is %d", avg_mm_throughput);
     }
     else { /* There were errors */
 	perfindex = 0.0;
