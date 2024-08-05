@@ -162,7 +162,7 @@ int size2list(int size) {
 
 void mm_free(void *bp) {
     checkheap(__LINE__);
-    printf("freesing pointer %p\n", bp);
+    printf("freeing pointer %p\n", bp);
     bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
     // update the allocation status
@@ -263,8 +263,8 @@ void *address_coalesce(void *bp) {
             PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
             PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
             // isolating the prev_block
-            PUT(SUCCP(PRED_VAL(prev)),(size_t)SUCC_VAL(prev));
-            PUT(PREDP(SUCC_VAL(prev)),(size_t)PRED_VAL(prev));
+            PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
+            PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
         }
         bp = prev;
     }
@@ -352,16 +352,31 @@ void place_link(void *bp, size_t asize) {
     }
 }
 
-// first fit
 void *find_fit(size_t asize) { 
-    void *bp, *start;
-    start = head_listp[size2list(asize)];
+    void *bp;
+    void *start = head_listp[size2list(asize)];
+    
+    // Iterate over the free list starting from the successor of the head pointer
     for (bp = (char *)SUCC_VAL(start); bp != head_listp[NUMLIST]; bp = (char *)SUCC_VAL(bp)) {
+        // Check if the block is free and of sufficient size
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-            return bp;
+            // Ensure bp is not one of the head pointers
+            int is_head_pointer = 0;
+            for (int i = 0; i < NUMLIST; i++) {
+                if (bp == head_listp[i]) {
+                    is_head_pointer = 1;
+                    break;
+                }
+            }
+            // If bp is not a head pointer, return it
+            if (!is_head_pointer) {
+                return bp;
+            }
         }
     }
-    return NULL; /* no fit */
+
+    // Return NULL if no fit is found
+    return NULL;
 }
 
 void mm_checkheap(int lineno) {
