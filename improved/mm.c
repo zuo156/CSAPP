@@ -162,7 +162,7 @@ int size2list(int size) {
 }
 
 void mm_free(void *bp) {
-    checkheap(__LINE__);
+    // checkheap(__LINE__);
     printf("freeing pointer %p\n", bp);
     bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
@@ -297,7 +297,7 @@ void *address_coalesce(void *bp) {
 }
 
 void *mm_malloc(size_t size) {
-    checkheap(__LINE__);
+    // checkheap(__LINE__);
     printf("malloc for size %d\n", size);
     // the input size is byte, not the number of the words
     size_t asize;   // adjusted block size
