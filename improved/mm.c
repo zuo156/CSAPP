@@ -62,7 +62,7 @@ team_t team = {
 #define SUCC_VAL(bp)   ((*((size_t *)SUCCP(bp))))
 
 /* Given a free-block ptr bp, compute address-adjacent blocks */
-#define NEXTP(bp)  ((char *)(bp) + GET_SIZE(HDRP((char *)(bp))))
+#define NEXTP(bp)  ((char *)(bp) + (GET_SIZE(HDRP((char *)(bp)))))
 #define PREVP(bp)  ((char *)(bp) - (GET_SIZE(HDRP((char *)(bp)) - WSIZE)))
 
 // #define NEXT_VAL(bp)  ((*((size_t *)NEXTP(bp))))
@@ -165,8 +165,8 @@ void mm_free(void *bp) {
     printf("freeing pointer %p\n", bp);
     bp = bp + DSIZE; 
     size_t size = GET_SIZE(HDRP(bp));
-    // update the allocation status
 
+    // update the allocation status
     PUT(HDRP(bp), PACK(size, 0));
     PUT(FTRP(bp), PACK(size,0));
 
@@ -190,6 +190,12 @@ void mm_free(void *bp) {
 void *address_coalesce(void *bp) {
     char *prev = PREVP(bp);
     char *next = NEXTP(bp);
+
+    // cache to avoid overwritten
+    size_t pred_next = PRED_VAL(next);
+    size_t succ_next = SUCC_VAL(next);
+    size_t pred_prev = PRED_VAL(prev);
+    size_t succ_prev = SUCC_VAL(prev);    
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi()) {      // if next is end of the heap
@@ -224,21 +230,21 @@ void *address_coalesce(void *bp) {
        
         if (next == (char *)SUCC_VAL(bp)) {
             // isolating bp and next_block together
-            PUT(SUCCP(PRED_VAL(bp)), SUCC_VAL(next));
-            PUT(PREDP(SUCC_VAL(next)), PRED_VAL(bp));
+            PUT(SUCCP(PRED_VAL(bp)), succ_next);
+            PUT(PREDP(succ_next), PRED_VAL(bp));
         }
         else if (next == (char *)PRED_VAL(bp)) {
             // isolating bp and next_block together
-            PUT(SUCCP(PRED_VAL(next)), SUCC_VAL(bp));
-            PUT(PREDP(SUCC_VAL(bp)), PRED_VAL(next));
+            PUT(SUCCP(pred_next), SUCC_VAL(bp));
+            PUT(PREDP(SUCC_VAL(bp)), pred_next);
         }
         else {
             // isolating the bp
             PUT(SUCCP(PRED_VAL(bp)),(size_t)SUCC_VAL(bp));
             PUT(PREDP(SUCC_VAL(bp)),(size_t)PRED_VAL(bp));
             // isolating the next_block
-            PUT(SUCCP(PRED_VAL(next)),(size_t)SUCC_VAL(next));
-            PUT(PREDP(SUCC_VAL(next)),(size_t)PRED_VAL(next));
+            PUT(SUCCP(pred_next),(size_t)succ_next);
+            PUT(PREDP(succ_next),(size_t)pred_next);
         }
     }
 
@@ -251,20 +257,20 @@ void *address_coalesce(void *bp) {
         what if the pred of bp is the prev free-block
         */
         if (prev == (char *)SUCC_VAL(bp)) {
-            PUT(SUCCP(PRED_VAL(bp)), SUCC_VAL(prev));
-            PUT(PREDP(SUCC_VAL(prev)), PRED_VAL(bp));
+            PUT(SUCCP(PRED_VAL(bp)), succ_prev);
+            PUT(PREDP(succ_prev), PRED_VAL(bp));
         }
         else if (prev == (char *)PRED_VAL(bp)) {
-            PUT(SUCCP(PRED_VAL(prev)), SUCC_VAL(bp));
-            PUT(PREDP(SUCC_VAL(bp)), PRED_VAL(prev));
+            PUT(SUCCP(pred_prev), SUCC_VAL(bp));
+            PUT(PREDP(SUCC_VAL(bp)), pred_prev);
         }
         else {
             // isolating the bp_block
             PUT(SUCCP(PRED_VAL(bp)), (size_t)SUCC_VAL(bp));
             PUT(PREDP(SUCC_VAL(bp)), (size_t)PRED_VAL(bp));
             // isolating the prev_block
-            PUT(SUCCP(PRED_VAL(prev)), (size_t)SUCC_VAL(prev));
-            PUT(PREDP(SUCC_VAL(prev)), (size_t)PRED_VAL(prev));
+            PUT(SUCCP(pred_prev), (size_t)succ_prev);
+            PUT(PREDP(succ_prev), (size_t)pred_prev);
         }
         bp = prev;
     }
