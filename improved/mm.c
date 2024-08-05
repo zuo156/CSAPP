@@ -196,8 +196,6 @@ void *address_coalesce(void *bp) {
     // cache to avoid overwritten
     size_t pred_next = PRED_VAL(next);
     size_t succ_next = SUCC_VAL(next);
-    size_t pred_prev = PRED_VAL(prev);
-    size_t succ_prev = SUCC_VAL(prev);    
 
     size_t next_alloc;
     if (next > (char *)mem_heap_hi()) {      // if next is end of the heap
@@ -258,6 +256,8 @@ void *address_coalesce(void *bp) {
     }
 
 
+    size_t pred_prev = PRED_VAL(prev);
+    size_t succ_prev = SUCC_VAL(prev);    
 
     if (!prev_alloc) {      /* coalesce with prev block*/
 	    size += GET_SIZE(HDRP(PREVP(bp)));
