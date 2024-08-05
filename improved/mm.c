@@ -71,6 +71,7 @@ team_t team = {
 /* global variable*/
 // char *list0, *list1, *list2, *list3, *end_list, *payload;
 char *head_listp[NUMLIST+1], *payload;
+int trace = 0;
 
 /* function protoptypes for internal helper routines */
 void *extend_heap(size_t words);
@@ -292,7 +293,6 @@ void *address_coalesce(void *bp) {
         PUT(PREDP(old), (size_t)bp);
     }
 
-
     return bp;
 }
 
@@ -398,7 +398,8 @@ void *find_fit(size_t asize) {
 
 void mm_checkheap(int lineno) {
 
-    printf("checking heap at %d line\n", lineno);
+    printf("checking heap at %d line of %d's command\n", lineno, trace);
+    trace +=1;
     char *bp = head_listp[NUMLIST] + 4 * WSIZE;
     int cnt_free1 = 0;
     int cnt_free2 = 0;
