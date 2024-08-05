@@ -190,7 +190,8 @@ void mm_free(void *bp) {
 void *address_coalesce(void *bp) {
     char *prev = PREVP(bp);
     char *next = NEXTP(bp);
-
+    char *old;
+    int index;
     // cache to avoid overwritten
     size_t pred_next = PRED_VAL(next);
     size_t succ_next = SUCC_VAL(next);
@@ -248,6 +249,14 @@ void *address_coalesce(void *bp) {
         }
     }
 
+    // move the merged free block to the begining of the specific list
+    index = size2list(size);
+    *old = (char *)SUCC_VAL(head_listp[index]);
+    PUT(SUCCP(head_listp[index]), (size_t)bp);
+    PUT(PREDP(bp), (size_t)head_listp[index]);
+    PUT(SUCCP(bp), (size_t)old);
+    PUT(PREDP(old), (size_t)bp);
+
     if (!prev_alloc) {      /* coalesce with prev block*/
 	    size += GET_SIZE(HDRP(PREVP(bp)));
 	    PUT(FTRP(bp), PACK(size, 0));
@@ -275,8 +284,8 @@ void *address_coalesce(void *bp) {
         bp = prev;
     }
     // move the merged free block to the begining of the specific list
-    int index = size2list(size);
-    char *old = (char *)SUCC_VAL(head_listp[index]);
+    index = size2list(size);
+    *old = (char *)SUCC_VAL(head_listp[index]);
     PUT(SUCCP(head_listp[index]), (size_t)bp);
     PUT(PREDP(bp), (size_t)head_listp[index]);
     PUT(SUCCP(bp), (size_t)old);
