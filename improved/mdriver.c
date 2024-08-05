@@ -346,11 +346,11 @@ int main(int argc, char **argv)
 	}
 	
 	perfindex = (p1 + p2)*100.0;
-	printf("Perf index = %.0f (util) + %.0f (thru) = %.0f/100\n",
+	printf("Perf index = %.0f (util) + %.0f (thru) = %.0f/100, actual throughput is %d\n",
 	       p1*100, 
 	       p2*100, 
-	       perfindex);
-	printf("actual throughput is %d", avg_mm_throughput);
+	       perfindex,
+		   avg_mm_throughput);
     }
     else { /* There were errors */
 	perfindex = 0.0;
