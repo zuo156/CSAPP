@@ -30,7 +30,8 @@ team_t team = {
 #define NUMLIST     20
 #define WSIZE       4       /* word size (bytes) */
 #define DSIZE       8       /* doubleword size (bytes) */
-#define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
+// #define CHUNKSIZE   (1<<12) /* initial heap size 4096(bytes) */
+#define CHUNKSIZE   (1<<20)
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
