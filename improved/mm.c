@@ -332,7 +332,110 @@ void *mm_malloc(size_t size) {
 }
 
 void *mm_realloc(void *ptr, size_t size) {
-    return NULL;
+    char *bp;
+    size_t asize, old_size;
+
+    if (ptr == NULL) {
+        return mm_malloc(size);
+    }
+
+    if (size<=0) {
+        return NULL;
+    }
+
+    // Adjust block size to include header and footer and to satisity alignment reqs.
+    if (size <= DSIZE) {
+        asize = 2 * DSIZE;
+    }
+    else {
+        asize = DSIZE * ((size + DSIZE + (DSIZE - 1)) /  DSIZE);
+    }
+
+    bp = ptr + DSIZE;
+    old_size = GET_SIZE(HDRP(bp));
+    
+    // whether the next block is free?
+    char *next = NEXTP(bp);
+    size_t next_alloc;
+
+    if (next > (char *)mem_heap_hi()) {
+        next_alloc = 1;
+    }
+    else {
+        next_alloc = GET_ALLOC(HDRP(next));
+    }
+
+    // if it is free, update the old_size
+    if (!next_alloc) {
+        old_size += GET_SIZE(HDRP(next));
+    }
+
+    if ((int)(old_size - asize) >= 2 * DSIZE) {
+        // it can keep its location
+        // cache to avoid overwritten
+        size_t pred_next = PRED_VAL(next);
+        size_t succ_next = SUCC_VAL(next);
+        // reallocate block
+        PUT(HDRP(bp), PACK(asize, 1));
+        PUT(FTRP(bp), PACK(asize, 1));
+        // free block
+        char *free_bp = (char *)NEXTP(bp);
+        // header and footer size
+        PUT(HDRP(free_bp), PACK(old_size - asize, 0));
+        PUT(FTRP(free_bp), PACK(old_size - asize, 0));
+
+        if (!next_alloc) { // if next is free
+            // relinking
+            PUT(PREDP(free_bp), pred_next); 
+            PUT(SUCCP(free_bp), succ_next);
+            // update pred and succ to the free_bp
+            PUT(SUCCP(pred_next), (size_t)free_bp);
+            PUT(PREDP(succ_next), (size_t)free_bp);
+        }
+        else { // if next is allocated
+            // put the remain at the begining of the heap
+
+            // store the old succ addres in prologue
+            int index = size2list(old_size-asize);
+            char *old = (char *)SUCC_VAL(head_listp[index]);
+
+            // update the succ address in prologue
+            PUT(SUCCP(head_listp[index]), (size_t)free_bp);
+
+            // linking this free block
+            PUT(PREDP(free_bp), (size_t)head_listp[index]);
+            PUT(SUCCP(free_bp), (size_t)old);
+
+            PUT(PREDP(old), (size_t)free_bp);
+            address_coalesce(free_bp);
+        }
+        return bp - DSIZE;
+    }
+    else if ((int)(old_size - asize) >= 0) {
+        if (!next_alloc) { // if next is free
+            // update the size of block
+            PUT(HDRP(bp), PACK(old_size, 1));
+            PUT(FTRP(bp), PACK(old_size, 1));
+            // isolate the occupied freed block
+            PUT(SUCCP(PRED_VAL(next)), (size_t)SUCC_VAL(next));
+            PUT(PREDP(SUCC_VAL(next)), (size_t)PRED_VAL(next));
+            return ptr;
+        } else { // if next isn't free, keep origin size
+            return ptr;
+        }
+    }
+    else { 
+        // find a new block
+        char *new_bp = mm_malloc(size);
+        // copy the old content to the new block byte by byte
+        int length = GET_SIZE(HDRP(bp)) - 2 * WSIZE;
+        for(int i = 0; i < length; i++) {
+            PUT(new_bp + i, GET(ptr + i));
+        }
+        // free the old block
+        mm_free(ptr);
+        return new_bp;
+    }
 }
 
 void place_link(void *bp, size_t asize) {
