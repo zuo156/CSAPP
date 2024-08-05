@@ -247,15 +247,16 @@ void *address_coalesce(void *bp) {
             PUT(SUCCP(pred_next),(size_t)succ_next);
             PUT(PREDP(succ_next),(size_t)pred_next);
         }
+        // move the merged free block to the begining of the specific list
+        index = size2list(size);
+        old = (char *)SUCC_VAL(head_listp[index]);
+        PUT(SUCCP(head_listp[index]), (size_t)bp);
+        PUT(PREDP(bp), (size_t)head_listp[index]);
+        PUT(SUCCP(bp), (size_t)old);
+        PUT(PREDP(old), (size_t)bp);
     }
 
-    // move the merged free block to the begining of the specific list
-    index = size2list(size);
-    old = (char *)SUCC_VAL(head_listp[index]);
-    PUT(SUCCP(head_listp[index]), (size_t)bp);
-    PUT(PREDP(bp), (size_t)head_listp[index]);
-    PUT(SUCCP(bp), (size_t)old);
-    PUT(PREDP(old), (size_t)bp);
+
 
     if (!prev_alloc) {      /* coalesce with prev block*/
 	    size += GET_SIZE(HDRP(PREVP(bp)));
@@ -282,14 +283,15 @@ void *address_coalesce(void *bp) {
             PUT(PREDP(succ_prev), (size_t)pred_prev);
         }
         bp = prev;
+        // move the merged free block to the begining of the specific list
+        index = size2list(size);
+        old = (char *)SUCC_VAL(head_listp[index]);
+        PUT(SUCCP(head_listp[index]), (size_t)bp);
+        PUT(PREDP(bp), (size_t)head_listp[index]);
+        PUT(SUCCP(bp), (size_t)old);
+        PUT(PREDP(old), (size_t)bp);
     }
-    // move the merged free block to the begining of the specific list
-    index = size2list(size);
-    old = (char *)SUCC_VAL(head_listp[index]);
-    PUT(SUCCP(head_listp[index]), (size_t)bp);
-    PUT(PREDP(bp), (size_t)head_listp[index]);
-    PUT(SUCCP(bp), (size_t)old);
-    PUT(PREDP(old), (size_t)bp);
+
 
     return bp;
 }
