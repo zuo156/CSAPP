@@ -41,7 +41,7 @@
 #include <stddef.h>
 #include "mm.h"
 #include "memlib.h"
-
+#include <string.h>
 
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
@@ -450,10 +450,12 @@ void *mm_realloc(void *ptr, size_t size) {
         // find a new block
         char *new_bp = mm_malloc(size);
         // copy the old content to the new block byte by byte
-        int length = GET_SIZE(HDRP(bp)) - 2 * WSIZE;
-        for(int i = 0; i < length; i++) {
-            PUT(new_bp + i, GET(ptr + i));
-        }
+        // int length = GET_SIZE(HDRP(bp)) - 2 * WSIZE;
+        // for(int i = 0; i < length; i++) {
+        //     PUT(new_bp + i, GET(ptr + i));
+        // }
+        size_t copy_size = GET_SIZE(HDRP(bp)) - DSIZE;
+        memcpy(new_bp, ptr, copy_size);
         // free the old block
         mm_free(ptr);
         return new_bp;
