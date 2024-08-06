@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include "mm.h"
 #include "memlib.h"
-
+#include <string.h>
 
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
