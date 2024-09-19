@@ -1,0 +1,47 @@
+Border relations with Canada have never been better.
+
+1 2 4 8 16 32 or more
+
+0 207
+1 311
+2 707
+3 256
+4 389
+5 206
+6 682
+7 327
+# pay attention that *0x402470(,%rax,8) is the address, it will jump to the address value stored at 0x402470(,%rax,8)
+# therefore, we need to check
+# (gdb) x/a 0x402470+0x0 or 0x10 or 0x18 and so on
+# 0x402470:       0x400f7c <phase_3+57>   0x400fb9 <phase_3+118>
+# 0x402480:       0x400f83 <phase_3+64>   0x400f8a <phase_3+71>
+# 0x402490:       0x400f91 <phase_3+78>   0x400f98 <phase_3+85>
+# 0x4024a0:       0x400f9f <phase_3+92>   0x400fa6 <phase_3+99>
+# when %rax = 1, x/a 0x402470+0x8 --> 0x400fb9 <phase_3+118>
+
+0 0 # 0b0 0b0
+1 0 # 0b1 0b0
+3 0 # 0b11 0b0
+7 0 # 0b111 0b0
+# we need to make sure we will not jump to the branche that %eax = (%eax,%eax)+1 which will make the final %eax!=0
+
+# table check the hex and ascii:
+# 2 bytes --> one char for one increment in address, therefore %rsp+22=0 is the end and %rsp+16 is the start
+# only care about the last one bytes
+# input 6 chars and make sure the last bytes are 9 f e 5 6 7.
+# because the table will transform 9 to 66, f to 6c, and so on and then compare new transformed string with "flyers"
+# for example, ionuvw --> 69 6F 6E 75 76 77
+
+4 3 2 1 6 5
+# line 518 to line 539 (two loops) --> unique 6 read_six_numbers from 1 to 6, not includes 0 because of unsigned int
+# line 542 to line 547 (one loop) --> reverse it by using 7 to minus the read_six_numbers
+# line 549 to line 566 --> table projection to %rsp+32 to %rsp+80(not included)
+# 1 --> 0x6032d0
+# 2 --> 0x6032e0
+# 3 --> 0x6032f0
+# 4 --> 0x603300
+# 5 --> 0x603310
+# 6 --> 0x603320
+# line 570 to line 577 --> change the table starting from 0x6032d0 + numbers of 16 + 8
+# line 579 to line 586 --> checking the memory in 0x6032d0 + numbers of 16 is ordered nondescending
+
